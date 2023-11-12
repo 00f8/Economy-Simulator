@@ -399,8 +399,8 @@ namespace Roblox.Rendering
                 ("%baseUrl%", $@"""{BaseUrl}""").Replace
                 ("%characterAppearanceUrl%", $@"""{characterAppearanceUrl}""").Replace
                 ("%fileExtension%", @"""png""").Replace
-                ("%x%", "720").Replace
-                ("%y%", "720");
+                ("%x%", "840").Replace
+                ("%y%", "840");
             
             string XML = $@"<?xml version=""1.0"" encoding=""utf-8""?>
             <soap:Envelope xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance""
@@ -427,6 +427,7 @@ namespace Roblox.Rendering
             </soap:Envelope>";
             
             string result = await SendRequestToRcc($"http://127.0.0.1:{RCCPort}", XML, "BatchJobEx");
+            Console.WriteLine(result);
             renderRcc.Kill();
             return result;
         }
