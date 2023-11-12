@@ -30,7 +30,6 @@ import Lottery from "./pages/Lottery.svelte";
 import FeatureFlags from "./pages/FeatureFlags.svelte";
 import ManageUserTransactions from "./pages/ManageUserTransactions.svelte";
 import Applications from "./pages/Applications.svelte";
-import Reference from "./pages/Reference.svelte";
 import ForumPosts from "./pages/TextModeration.svelte";
 import Groups from "./pages/Groups.svelte";
 import GameHistory from "./pages/GameHistory.svelte";
@@ -141,9 +140,6 @@ import Permissions from "./pages/Permissions.svelte";
 		</Route>
 		<Route path="/admin/applications/:id" let:params>
 			<Applications id={params.id} />
-		</Route>
-		<Route path="/admin/reference">
-			<Reference />
 		</Route>
 		<Route path="/admin/text-posts">
 			<ForumPosts />
