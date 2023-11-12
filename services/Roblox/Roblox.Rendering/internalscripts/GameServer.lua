@@ -217,4 +217,4 @@ function start(placeId, port, url)
 	
 	
 	end
-start(%placeId%, %port%, "http://fossci.net")	
+start(%placeId%, %port%, "http://economysimulator.com")	

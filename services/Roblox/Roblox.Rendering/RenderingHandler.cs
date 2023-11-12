@@ -26,7 +26,7 @@ namespace Roblox.Rendering
         {
             using (HttpClient RccHttpClient = new HttpClient())
             {
-                RccHttpClient.DefaultRequestHeaders.Add("SOAPAction", $"http://fossci.net/{SOAPAction}");
+                RccHttpClient.DefaultRequestHeaders.Add("SOAPAction", $"http://economysimulator.com/{SOAPAction}");
                 HttpContent XMLContent = new StringContent(XML, Encoding.UTF8, "text/xml");
                 try
                 {
@@ -37,7 +37,7 @@ namespace Roblox.Rendering
                         Console.WriteLine($"[RCCSendRequest] Recieved not OK status request: {RccHttpClientPost.StatusCode}, full response: {RccHttpClientResponse}");
                     }
                     XDocument Doc = XDocument.Parse(RccHttpClientResponse);
-                    XNamespace ns1 = "http://fossci.net/";
+                    XNamespace ns1 = "http://economysimulator.com/";
                     XElement Element = Doc.Descendants(ns1 + "value").FirstOrDefault()!;
                     string LuaValue = Element.Value ?? "";
                     return LuaValue;
@@ -79,7 +79,7 @@ namespace Roblox.Rendering
                xmlns:xsd=""http://www.w3.org/2001/XMLSchema""
                xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"">
                 <soap:Body>
-                    <BatchJobEx xmlns=""http://fossci.net/"">
+                    <BatchJobEx xmlns=""http://economysimulator.com/"">
                         <job>
                             <id>{Guid.NewGuid().ToString()}</id>
                             <category>1</category>
@@ -132,7 +132,7 @@ namespace Roblox.Rendering
                xmlns:xsd=""http://www.w3.org/2001/XMLSchema""
                xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"">
                 <soap:Body>
-                    <BatchJobEx xmlns=""http://fossci.net/"">
+                    <BatchJobEx xmlns=""hhttp://economysimulator.com/"">
                         <job>
                             <id>{Guid.NewGuid().ToString()}</id>
                             <category>1</category>
@@ -188,7 +188,7 @@ namespace Roblox.Rendering
                xmlns:xsd=""http://www.w3.org/2001/XMLSchema""
                xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"">
                 <soap:Body>
-                    <BatchJobEx xmlns=""http://fossci.net/"">
+                    <BatchJobEx xmlns=""http://economysimulator.com/"">
                         <job>
                             <id>{Guid.NewGuid().ToString()}</id>
                             <category>1</category>
@@ -242,7 +242,7 @@ namespace Roblox.Rendering
                xmlns:xsd=""http://www.w3.org/2001/XMLSchema""
                xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"">
                 <soap:Body>
-                    <BatchJobEx xmlns=""http://fossci.net/"">
+                    <BatchJobEx xmlns=""http://economysimulator.com/"">
                         <job>
                             <id>{Guid.NewGuid().ToString()}</id>
                             <category>1</category>
@@ -298,7 +298,7 @@ namespace Roblox.Rendering
                xmlns:xsd=""http://www.w3.org/2001/XMLSchema""
                xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"">
                 <soap:Body>
-                    <BatchJobEx xmlns=""http://fossci.net/"">
+                    <BatchJobEx xmlns=""http://economysimulator.com/"">
                         <job>
                             <id>{Guid.NewGuid().ToString()}</id>
                             <category>1</category>
@@ -354,7 +354,7 @@ namespace Roblox.Rendering
                xmlns:xsd=""http://www.w3.org/2001/XMLSchema""
                xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"">
                 <soap:Body>
-                    <BatchJobEx xmlns=""http://fossci.net/"">
+                    <BatchJobEx xmlns=""http://economysimulator.com/"">
                         <job>
                             <id>{Guid.NewGuid().ToString()}</id>
                             <category>1</category>
@@ -407,7 +407,7 @@ namespace Roblox.Rendering
                xmlns:xsd=""http://www.w3.org/2001/XMLSchema""
                xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"">
                 <soap:Body>
-                    <BatchJobEx xmlns=""http://fossci.net/"">
+                    <BatchJobEx xmlns=""http://economysimulator.com/"">
                         <job>
                             <id>{Guid.NewGuid().ToString()}</id>
                             <category>1</category>
@@ -465,7 +465,7 @@ namespace Roblox.Rendering
                xmlns:xsd=""http://www.w3.org/2001/XMLSchema""
                xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"">
                 <soap:Body>
-                    <BatchJobEx xmlns=""http://fossci.net/"">
+                    <BatchJobEx xmlns=""http://economysimulator.com/"">
                         <job>
                             <id>{Guid.NewGuid().ToString()}</id>
                             <category>1</category>
