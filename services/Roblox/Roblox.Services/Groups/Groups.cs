@@ -479,11 +479,11 @@ public class GroupsService : ServiceBase, IService
     // Example URL: https://discord.gg/abcd123
     private static readonly Regex DiscordUrlRegex = new Regex("https?:\\/\\/discord.gg\\/[0-9a-zA-Z]+");
 
-    // Example URL (www is optional): https://www.example.com/groups/1/name#!/about
-    private static readonly Regex RobloxGroupUrlRegex = new("https:\\/\\/(www\\.)?example.com\\/groups\\/[0-9]+\\/[a-zA-Z\\-0-9]+", RegexOptions.IgnoreCase);
+    // Example URL (www is optional): https://www.economysimulator.com/groups/1/name#!/about
+    private static readonly Regex RobloxGroupUrlRegex = new("https:\\/\\/(www\\.)?economysimulator.com\\/groups\\/[0-9]+\\/[a-zA-Z\\-0-9]+", RegexOptions.IgnoreCase);
     
-    // Example URL (www is optional): https://example.com/My/Groups.aspx?gid=4
-    private static readonly Regex RobloxGroupUrlRegexOld = new("https:\\/\\/(www\\.)?example.com\\/my\\/groups\\.aspx\\?gid=[0-9]+", RegexOptions.IgnoreCase);
+    // Example URL (www is optional): https://economysimulator.com/My/Groups.aspx?gid=4
+    private static readonly Regex RobloxGroupUrlRegexOld = new("https:\\/\\/(www\\.)?economysimulator.com\\/my\\/groups\\.aspx\\?gid=[0-9]+", RegexOptions.IgnoreCase);
 
     private bool IsLinkValid(SocialLinkType type, string url, string title)
     {

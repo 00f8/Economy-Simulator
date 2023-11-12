@@ -827,7 +827,7 @@ export default class CommandHandler extends StdExceptions {
 	}
 
 	private async GetTeeShirtThumb(assetId: number): Promise<Buffer> {
-		// https://example.com
+		// https://economysimulator.com
 		const result = await axiosClient.get(`${conf.baseUrl}/asset/?id=${assetId}`, {
 			responseType: 'arraybuffer',
 			headers: {

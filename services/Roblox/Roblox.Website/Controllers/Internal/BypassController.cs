@@ -1038,7 +1038,7 @@ namespace Roblox.Website.Controllers
                 about = "Integration test",
                 socialPresence = "",
                 isVerified = true,
-                verifiedUrl = "https://example.com/",
+                verifiedUrl = "https://economysimulator.com/",
                 verificationPhrase = "Integration test",
                 verifiedId = "1",
             });
