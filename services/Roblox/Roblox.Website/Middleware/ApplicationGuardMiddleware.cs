@@ -369,8 +369,7 @@ public class ApplicationGuardMiddleware
         var isAuthorized = IsAuthorized(ctx);
         authTimer.Stop();
 
-        if (isAuthorized || allowedUrls.Contains(normalizedPath) ||
-            RobloxPlayerDataRegex.IsMatch(normalizedPath))
+        if (isAuthorized || allowedUrls.Contains(normalizedPath))
             {
                 appGuardTimer.Stop();
                 await _next(ctx);

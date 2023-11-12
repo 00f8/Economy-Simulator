@@ -98,10 +98,10 @@ public class FrontendProxyMiddleware
 
     private async Task<HttpResponseMessage> ProxyRequestAsync(string url)
     {
-        var fullUrl = "http://localhost:3185" + url;
+        var fullUrl = "http://localhost:3000" + url;
         Console.WriteLine("[PROXY] {0}", fullUrl);
         var safeUrl = new Uri(fullUrl);
-        if (safeUrl.Port != 3185)
+        if (safeUrl.Port != 3000)
             throw new ArgumentException("Unsafe Url: " + fullUrl);
         if (safeUrl.Host != "localhost")
             throw new ArgumentException("Unsafe Url: " + fullUrl);
