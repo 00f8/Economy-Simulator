@@ -20,6 +20,7 @@ public static class Configuration
     public static string XmlTemplatesDirectory { get; set; }
     public static string JsonDataDirectory { get; set; }
     public static string AdminBundleDirectory { get; set; }
+    public static string LuaScriptsDirectory { get; set; }
     public static string EconomyChatBundleDirectory { get; set; }
     public static string BaseUrl { get; set; }
     public static string HCaptchaPublicKey { get; set; }
@@ -59,5 +60,5 @@ public static class Configuration
         }
     }
 
-    public static string GameServerDomain => "gameserver.com"; // set to your game server's domain
+    public static string GameServerDomain => "economysimulator.com"; // set to your game server's domain
 }
