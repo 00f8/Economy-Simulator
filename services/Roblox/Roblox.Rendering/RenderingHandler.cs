@@ -455,8 +455,8 @@ namespace Roblox.Rendering
                 ("%x%", "720").Replace
                 ("%y%", "720").Replace
                 ("%quadratic%", "true").Replace
-                ("%baseHatZoom%", "30").Replace
-                ("%maxHatZoom%", "100").Replace
+                ("%baseHatZoom%", "40").Replace
+                ("%maxHatZoom%", "60").Replace
                 ("%cameraOffsetX%", "0").Replace
                 ("%cameraOffsetY%", "0");
             
