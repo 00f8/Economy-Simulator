@@ -1,18 +1,15 @@
-using System.Diagnostics;
-using System.Text.Json;
-using Microsoft.AspNetCore.Http.Json;
 using Roblox.Rendering;
 using Roblox.Website.Middleware;
 using System.Text.Json.Serialization;
+using InfluxDB.Client.Api.Client;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Net.Http.Headers;
 using Roblox;
 using Roblox.Services;
 using Roblox.Services.App.FeatureFlags;
+using Roblox.Website.Controllers.Internal;
 using Roblox.Website.Hubs;
-using Roblox.Website.WebsiteModels;
-
 var domain = AppDomain.CurrentDomain;
 // Set a timeout interval of 5 seconds.
 domain.SetData("REGEX_DEFAULT_MATCH_TIMEOUT", TimeSpan.FromSeconds(5));
@@ -26,10 +23,6 @@ var builder = WebApplication.CreateBuilder(args);
 // DB
 Roblox.Services.Database.Configure(configuration.GetSection("Postgres").Value);
 Roblox.Services.Cache.Configure(configuration.GetSection("Redis").Value);
-#if RELEASE
-// Influx DB
-Roblox.Metrics.RobloxInfluxDb.Configure(configuration.GetSection("InfluxDB:Website:BaseUrl").Value, configuration.GetSection("InfluxDB:Website:Authorization").Value);
-#endif
 // Config
 Roblox.Configuration.CdnBaseUrl = configuration.GetSection("CdnBaseUrl").Value;
 Roblox.Configuration.AssetDirectory = configuration.GetSection("Directories:Asset").Value;
@@ -46,14 +39,15 @@ Roblox.Configuration.HCaptchaPublicKey = configuration.GetSection("HCaptcha:Publ
 Roblox.Configuration.HCaptchaPrivateKey = configuration.GetSection("HCaptcha:Private").Value;
 Roblox.Configuration.GameServerAuthorization = configuration.GetSection("GameServerAuthorization").Value;
 Roblox.Configuration.BotAuthorization = configuration.GetSection("BotAuthorization").Value;
-IConfiguration gameServerConfig = new ConfigurationBuilder().AddJsonFile("game-servers.json").Build();
-Roblox.Configuration.GameServerIpAddresses = gameServerConfig.GetSection("GameServers").Get<IEnumerable<GameServerConfigEntry>>();
 Roblox.Configuration.RccAuthorization = configuration.GetSection("RccAuthorization").Value;
+Roblox.Configuration.LuaScriptsDirectory = configuration.GetSection("Directories:RCCLuaScripts").Value;
+//IConfiguration gameServerConfig = new ConfigurationBuilder().AddJsonFile("game-servers.json").Build();
+//Roblox.Configuration.GameServerIpAddresses = gameServerConfig.GetSection("GameServers").Get<IEnumerable<GameServerConfigEntry>>();
 Roblox.Configuration.AssetValidationServiceUrl =
     configuration.GetSection("AssetValidation:BaseUrl").Value;
 Roblox.Configuration.AssetValidationServiceAuthorization =
     configuration.GetSection("AssetValidation:Authorization").Value;
-Roblox.Services.GameServerService.Configure(string.Join(Guid.NewGuid().ToString(), new int [16].Select(_ => Guid.NewGuid().ToString()))); // More TODO: If we every load balance, this will break
+GameServerService.Configure(string.Join(Guid.NewGuid().ToString(), new int [16].Select(_ => Guid.NewGuid().ToString()))); // More TODO: If we every load balance, this will break
 Roblox.Configuration.PackageShirtAssetId = long.Parse(configuration.GetSection("PackageShirtAssetId").Value);
 Roblox.Configuration.PackagePantsAssetId = long.Parse(configuration.GetSection("PackagePantsAssetId").Value);
 Roblox.Libraries.TwitterApi.TwitterApi.Configure(configuration.GetSection("Twitter:Bearer").Value);
@@ -154,8 +148,9 @@ app.UseRobloxLoggingMiddleware();
 
 app.UseExceptionHandler("/error");
 // await CommandHandler.Configure("ws://localhost:3189", "hello world of deving 1234");
-CommandHandler.Configure(configuration.GetSection("Render:BaseUrl").Value, configuration.GetSection("Render:Authorization").Value);
-
+//CommandHandler.Configure(configuration.GetSection("Render:BaseUrl").Value, configuration.GetSection("Render:Authorization").Value); // will be removed soon
+SignatureController.Setup();
+RenderingHandler.Configure(configuration.GetSection("BaseUrl").Value, configuration.GetSection("Directories:RCCService").Value, configuration.GetSection("Directories:RCCLuaScripts").Value);
 SessionMiddleware.Configure(configuration.GetSection("Jwt:Sessions").Value);
 app.UseTimerMiddleware(); // Must always be last
 
