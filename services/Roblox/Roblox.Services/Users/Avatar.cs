@@ -9,6 +9,9 @@ using Roblox.Services.DbModels;
 using Roblox.Exceptions.Services.Users;
 using Roblox.Rendering;
 using Roblox.Services.Exceptions;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Png;
+using SixLabors.ImageSharp.Processing;
 using Type = Roblox.Models.Assets.Type;
 
 namespace Roblox.Services;
@@ -561,58 +564,49 @@ public class AvatarService : ServiceBase, IService
                 return;
             }
         }
-
         // We have to call render library now.
         // Set image urls to null:
         await UpdateUserAvatarImages(userId, null, null);
         // Create request
         var extendedAssetDetails = await assets.MultiGetInfoById(assetIds);
-        var request = new Roblox.Rendering.AvatarData()
-        {
-            userId = userId,
-            assets = extendedAssetDetails.Select(c => new AvatarAssetEntry()
-            {
-                id = c.id,
-                assetType = new AvatarAssetTypeEntry()
-                {
-                    id = (int) c.assetType,
-                },
-            }),
-            bodyColors = new AvatarBodyColors()
-            {
-                headColorId = colors.headColorId,
-                torsoColorId = colors.torsoColorId,
-                leftArmColorId = colors.leftArmColorId,
-                rightArmColorId = colors.rightArmColorId,
-                leftLegColorId = colors.leftLegColorId,
-                rightLegColorId = colors.rightLegColorId,
-            },
-            playerAvatarType = "R6",
-        };
         // Sane timeout of 2 minutes. If a render takes longer than this, something's probably broken
         using var cancellation = new CancellationTokenSource();
         cancellation.CancelAfter(TimeSpan.FromMinutes(2));
         // Make both requests at once
-        var result = await Task.WhenAll(new List<Task<Stream>>()
+        var tasks = new List<Task<string>>()
         {
-            CommandHandler.RequestPlayerHeadshot(request, cancellation.Token),
-            CommandHandler.RequestPlayerThumbnail(request, cancellation.Token),
-        });
-        var headshotStream = result[0];
-        var thumbnailStream = result[1];
+            RenderingHandler.RequestHeadshotThumbnail(userId, 20),
+            RenderingHandler.RequestPlayerThumbnail(userId, 20),
+            // Other asynchronous methods that return strings
+        };
+        var result = await Task.WhenAll(tasks);
+        var headshotResult = result[0];
+        var thumbnailResult = result[1];
         // Write the files
-        await using (var fileStream = File.Create(Configuration.PublicDirectory + headshotUrl))
+        // Write the headshot first
+        try
         {
-            headshotStream.Seek(0, SeekOrigin.Begin);
-            await headshotStream.CopyToAsync(fileStream);
+            string filename = $"{avatarHash}_headshot.png";
+            string ResizedImage = await GetResizedImageFromBase64(headshotResult, 150, 150);
+            byte[] BinaryData = Convert.FromBase64String(ResizedImage);
+            await File.WriteAllBytesAsync($"{Configuration.ThumbnailsDirectory}{filename}", BinaryData);
         }
-
-        await using (var fileStream = File.Create(Configuration.PublicDirectory + thumbnailUrl))
+        catch (Exception e)
         {
-            thumbnailStream.Seek(0, SeekOrigin.Begin);
-            await thumbnailStream.CopyToAsync(fileStream);
+            Console.WriteLine($"[RewrittenRCC]: Failed to save thumbnail: {e}");
         }
-
+        // Now thumbnail
+        try
+        {
+            string filename = $"{avatarHash}_thumbnail.png";
+            string ResizedImage = await GetResizedImageFromBase64(thumbnailResult, 352, 352);
+            byte[] BinaryData = Convert.FromBase64String(ResizedImage);
+            await File.WriteAllBytesAsync($"{Configuration.ThumbnailsDirectory}{filename}", BinaryData);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"[RewrittenRCC]: Failed to save thumbnail: {e}");
+        }
         // Finally, update the avatar thumbnail
         await UpdateUserAvatarImages(userId, headshotUrl, thumbnailUrl);
     }
@@ -625,5 +619,34 @@ public class AvatarService : ServiceBase, IService
     public bool IsReusable()
     {
         return false;
+    }
+    
+    public static async Task<string> GetResizedImageFromBase64(string base64, int newX, int newY)
+    {
+        try
+        {
+            byte[] imageBytes = Convert.FromBase64String(base64);
+
+            using (MemoryStream memoryStream = new MemoryStream(imageBytes))
+            using (Image image = await Image.LoadAsync(memoryStream))
+            {
+                image.Mutate(x => x.Resize(new ResizeOptions
+                {
+                    Size = new Size(newX, newY),
+                    Mode = ResizeMode.Max
+                }));
+
+                using (MemoryStream resizedMemoryStream = new MemoryStream())
+                {
+                    await image.SaveAsync(resizedMemoryStream, new PngEncoder());
+                    byte[] resizedImageBytes = resizedMemoryStream.ToArray();
+                    return Convert.ToBase64String(resizedImageBytes);
+                }
+            }
+        }
+        catch
+        {
+            return "BAD";
+        }
     }
 }
