@@ -281,7 +281,7 @@ public class RobloxApi
             {
                 using var cancel = new CancellationTokenSource();
                 cancel.CancelAfter(TimeSpan.FromMilliseconds(maxAttemptTimeMs));
-                var url = $"https://api.roblox.com/marketplace/productinfo?assetId={assetId}";
+                var url = $"https://economy.roblox.com/v2/assets/{assetId}/details";
                 var result = await _client.GetAsync(url, cancel.Token);
                 if (result.StatusCode is HttpStatusCode.TooManyRequests)
                 {
