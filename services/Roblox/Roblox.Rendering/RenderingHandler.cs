@@ -44,7 +44,7 @@ namespace Roblox.Rendering
                 }
                 catch (Exception e)
                 {
-                    //Console.WriteLine($"[RCCSendRequest] Failed to send request to RCC: {e}");
+                    Console.WriteLine($"[RCCSendRequest] Failed to send request to RCC: {e}");
                 }
             }
             return "FAILURE"; // failure
