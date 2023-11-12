@@ -135,7 +135,6 @@ public class AssetsService : ServiceBase, IService
         // Done
         return plainHash;
     }
-
     public Task DeleteAssetContent(string key, string? directory = null)
     {
         if (key.Contains('/', StringComparison.Ordinal))
@@ -410,10 +409,16 @@ public class AssetsService : ServiceBase, IService
 
     private async Task CreateAssetTextureThumbnail(long assetId, Models.Assets.Type assetType, CancellationToken? cancellationToken = null)
     {
+        bool isFace = assetType == Type.Face;
         var latestVersion = await GetLatestAssetVersion(assetId);
-        var response = await Rendering.CommandHandler.RequestTextureThumbnail(assetId, (int) assetType, cancellationToken);
-        var key = await UploadAssetContent(response, Configuration.ThumbnailsDirectory, "png");
-        await InsertOrReplaceThumbnail(assetId, latestVersion.assetVersionId, key, ModerationStatus.ReviewApproved);
+        string response = await Rendering.RenderingHandler.RequestImageThumbnail(assetId, 20, isFace);
+        string ResizedBase64 = await AvatarService.GetResizedImageFromBase64(response, 420, 420);
+        byte[] imageBytes = Convert.FromBase64String(ResizedBase64);
+        using (var imageStream = new MemoryStream(imageBytes))
+        {
+            var key = await UploadAssetContent(imageStream, Configuration.ThumbnailsDirectory, "png");
+            await InsertOrReplaceThumbnail(assetId, latestVersion.assetVersionId, key, ModerationStatus.ReviewApproved);
+        }
     }
     
     private async Task CreatePackageThumbnail(long assetId, CancellationToken? cancellationToken = null)
@@ -467,24 +472,41 @@ public class AssetsService : ServiceBase, IService
     private async Task CreateAssetThumbnail(long assetId, CancellationToken? cancellationToken = null)
     {
         var latestVersion = await GetLatestAssetVersion(assetId);
-        var response = await Rendering.CommandHandler.RequestAssetThumbnail(assetId, cancellationToken);
-        var key = await UploadAssetContent(response, Configuration.ThumbnailsDirectory, "png");
-        await InsertOrReplaceThumbnail(assetId, latestVersion.assetVersionId, key, ModerationStatus.ReviewApproved);
+        string response = await Rendering.RenderingHandler.RequestHatThumbnail(assetId, 20);
+        string ResizedBase64 = await AvatarService.GetResizedImageFromBase64(response, 420, 420);
+        byte[] imageBytes = Convert.FromBase64String(ResizedBase64);
+        using (var imageStream = new MemoryStream(imageBytes))
+        {
+            var key = await UploadAssetContent(imageStream, Configuration.ThumbnailsDirectory, "png");
+            await InsertOrReplaceThumbnail(assetId, latestVersion.assetVersionId, key, ModerationStatus.ReviewApproved);
+        }
     }
+
 
     private async Task CreateMeshThumbnail(long assetId, CancellationToken? cancellationToken = null)
     {
         var latestVersion = await GetLatestAssetVersion(assetId);
-        var response = await Rendering.CommandHandler.RequestAssetMesh(assetId, cancellationToken);
-        var key = await UploadAssetContent(response, Configuration.ThumbnailsDirectory, "png");
-        await InsertOrReplaceThumbnail(assetId, latestVersion.assetVersionId, key, ModerationStatus.ReviewApproved);
+        string response = await RenderingHandler.RequestMeshThumbnail(assetId, 20);
+        string ResizedBase64 = await AvatarService.GetResizedImageFromBase64(response, 420, 420);
+        byte[] imageBytes = Convert.FromBase64String(ResizedBase64);
+        using (var imageStream = new MemoryStream(imageBytes))
+        {
+            var key = await UploadAssetContent(imageStream, Configuration.ThumbnailsDirectory, "png");
+            await InsertOrReplaceThumbnail(assetId, latestVersion.assetVersionId, key, ModerationStatus.ReviewApproved);
+        }
     }
 
     private async Task CreateGameThumbnail(long assetId, CancellationToken? cancellationToken = null)
     {
+        string key;
         var latestVersion = await GetLatestAssetVersion(assetId);
-        var response = await Rendering.CommandHandler.RequestAssetGame(assetId, 640, 360, cancellationToken);
-        var key = await UploadAssetContent(response, Configuration.ThumbnailsDirectory, "png");
+        string response = await RenderingHandler.RequestPlaceRender(assetId, 20, 1680, 945);
+        string ResizedBase64 = await AvatarService.GetResizedImageFromBase64(response, 352, 352);
+        byte[] imageBytes = Convert.FromBase64String(ResizedBase64);
+        using (var imageStream = new MemoryStream(imageBytes))
+        {
+            key = await UploadAssetContent(imageStream, Configuration.ThumbnailsDirectory, "png");
+        }
         await InsertOrReplaceThumbnail(assetId, latestVersion.assetVersionId, key,
             ModerationStatus.AwaitingApproval);
     }
@@ -529,14 +551,19 @@ public class AssetsService : ServiceBase, IService
 
     private async Task CreateGameIcon(long assetId, Stream? thumbnailToUse = null, CancellationToken? cancellationToken = null)
     {
+        string key = "";
         if (thumbnailToUse == null)
         {
             Writer.Info(LogGroup.GameIconRender, "start game icon render. placeId={0}", assetId);
-            thumbnailToUse = await Rendering.CommandHandler.RequestAssetGame(assetId, 420, 420, cancellationToken);
+            string rawRender = await RenderingHandler.RequestPlaceRender(assetId, 60, 1680, 1680);
+            string ResizedBase64 = await AvatarService.GetResizedImageFromBase64(rawRender, 352, 352);
+            byte[] imageBytes = Convert.FromBase64String(ResizedBase64);
+            using (var imageStream = new MemoryStream(imageBytes))
+            {
+                key = await UploadAssetContent(imageStream, Configuration.ThumbnailsDirectory, "png");
+            }
             Writer.Info(LogGroup.GameIconRender, "game icon render over. placeId={0}", assetId);
         }
-
-        var key = await UploadAssetContent(thumbnailToUse, Configuration.ThumbnailsDirectory, "png");
         await InsertOrReplaceIcon(assetId, key, ModerationStatus.AwaitingApproval);
     }
 
@@ -563,34 +590,27 @@ public class AssetsService : ServiceBase, IService
     private async Task CreateClothingThumbnail(long assetId, Models.Assets.Type assetType, CancellationToken? cancellationToken = null)
     {
         var latestVersion = await GetLatestAssetVersion(assetId);
-        var response = await Rendering.CommandHandler.RequestPlayerThumbnail(new()
+        string response = await RenderingHandler.RequestClothingRender(assetId, 20);
+        string ResizedBase64 = await AvatarService.GetResizedImageFromBase64(response, 420, 420);
+        byte[] imageBytes = Convert.FromBase64String(ResizedBase64);
+        using (var imageStream = new MemoryStream(imageBytes))
         {
-            userId = assetId,
-            playerAvatarType = "R6",
-            assets = new List<AvatarAssetEntry>()
-            {
-                new AvatarAssetEntry()
-                {
-                    id = assetId,
-                    assetType = new AvatarAssetTypeEntry()
-                    {
-                        id = (int) assetType,
-                    }
-                }
-            },
-            bodyColors = new AvatarBodyColors()
-            {
-                headColorId = 1001,
-                torsoColorId = 1001,
-                leftArmColorId = 1001,
-                rightArmColorId = 1001,
-                leftLegColorId = 1001,
-                rightLegColorId = 1001,
-            },
-        }, cancellationToken);
-        var key = await UploadAssetContent(response, Configuration.ThumbnailsDirectory, "png");
-        await InsertOrReplaceThumbnail(assetId, latestVersion.assetVersionId, key,
-            ModerationStatus.AwaitingApproval);
+            var key = await UploadAssetContent(imageStream, Configuration.ThumbnailsDirectory, "png");
+            await InsertOrReplaceThumbnail(assetId, latestVersion.assetVersionId, key, ModerationStatus.AwaitingApproval);
+        }
+    }
+    
+    private async Task CreateHeadThumbnail(long assetId, Models.Assets.Type assetType, CancellationToken? cancellationToken = null)
+    {
+        var latestVersion = await GetLatestAssetVersion(assetId);
+        string response = await RenderingHandler.RequestHeadRender(assetId, 20);
+        string ResizedBase64 = await AvatarService.GetResizedImageFromBase64(response, 420, 420);
+        byte[] imageBytes = Convert.FromBase64String(ResizedBase64);
+        using (var imageStream = new MemoryStream(imageBytes))
+        {
+            var key = await UploadAssetContent(imageStream, Configuration.ThumbnailsDirectory, "png");
+            await InsertOrReplaceThumbnail(assetId, latestVersion.assetVersionId, key, ModerationStatus.AwaitingApproval);
+        }
     }
 
     #endregion
@@ -615,9 +635,13 @@ public class AssetsService : ServiceBase, IService
             // clothing
             case Models.Assets.Type.Shirt:
             case Models.Assets.Type.Pants:
+                thumbRequests.Add(CreateClothingThumbnail(assetId, assetType, cancellationToken));
+                break;
             // package stuff
-            case Type.Torso:
             case Type.Head:
+                thumbRequests.Add(CreateHeadThumbnail(assetId, assetType, cancellationToken));
+                break;
+            case Type.Torso:
             case Type.LeftArm: 
             case Type.RightArm:
             case Type.LeftLeg:
