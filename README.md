@@ -1,2 +1,0 @@
-# Economy Simulator
- 
