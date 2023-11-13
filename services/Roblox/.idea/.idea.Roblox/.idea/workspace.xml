@@ -7,10 +7,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="334b8d1c-3b9d-4bc2-8d1f-4f41f44071c9" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/Roblox.Rendering/RenderingHandler.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Roblox.Rendering/RenderingHandler.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Roblox.Rendering/internalscripts/Decal.lua" beforeDir="false" afterPath="$PROJECT_DIR$/Roblox.Rendering/internalscripts/Decal.lua" afterDir="false" />
-    </list>
+    <list default="true" id="334b8d1c-3b9d-4bc2-8d1f-4f41f44071c9" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -77,7 +74,7 @@
       <updated>1699820671211</updated>
       <workItem from="1699820672294" duration="891000" />
       <workItem from="1699823219630" duration="418000" />
-      <workItem from="1699843957354" duration="1062000" />
+      <workItem from="1699843957354" duration="1195000" />
     </task>
     <servers />
   </component>

@@ -1800,6 +1800,9 @@ Thank you for your understanding,
                 Type.WaistAccessory,
                 Type.NeckAccessory,
                 Type.Package,
+                Type.Face,
+                Type.Gear,
+                Type.Head
             };
             if (!allowedTypes.Contains(extraInfo.assetType))
                 throw new StaffException("You do not have permission to update a product that is not a hat, accessory, or package");

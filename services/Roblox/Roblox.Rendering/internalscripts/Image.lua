@@ -4,6 +4,8 @@ assetUrl, fileExtension, x, y, baseUrl = %assetUrl%, %fileExtension%, %x%, %y%, 
 pcall(function() game:GetService("ContentProvider"):SetBaseUrl(baseUrl) end) 
 game:GetService('ScriptContext').ScriptsDisabled = true
 
+local thumbnailGenerator = game:GetService("ThumbnailGenerator")
+
 local image, requestedUrls
 local success = pcall(function()
 	image = thumbnailGenerator:ClickTexture(assetUrl, fileExtension, x, y)
