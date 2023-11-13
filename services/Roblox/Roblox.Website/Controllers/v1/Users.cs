@@ -6,6 +6,7 @@ using Roblox.Models.Users;
 using Roblox.Exceptions.Services.Users;
 using Roblox.Services.Exceptions;
 using Roblox.Models;
+using Roblox.Website.Filters;
 
 namespace Roblox.Website.Controllers;
 
@@ -14,7 +15,7 @@ namespace Roblox.Website.Controllers;
 public class UsersControllerV1 : ControllerBase
 {
     [HttpGet("users/authenticated")]
-    public dynamic GetMySession()
+    public async dynamic GetMySession()
     {
         if (userSession is null) throw new UnauthorizedException();
         return new
@@ -22,6 +23,7 @@ public class UsersControllerV1 : ControllerBase
             id = userSession.userId,
             name = userSession.username,
             displayName = userSession.username,
+            isStaff = await StaffFilter.IsStaff(userSession.userId)
         };
     }
 

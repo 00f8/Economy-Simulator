@@ -14,6 +14,7 @@ const AuthenticationStore = createContainer(() => {
   const [isPending, setIsPending] = useState(true);
   const [robux, setRobux] = useState(null);
   const [tix, setTix] = useState(null);
+  const [isStaff, setIsStaff] = useState(null);
   const [notificationCount, setNotificationCount] = useState({
     messages: 0,
     trades: 0,
@@ -27,6 +28,7 @@ const AuthenticationStore = createContainer(() => {
       }
       console.log(result)
       setUserId(result.id);
+      setIsStaff(result.isStaff);
       setUsername(result.name);
       setIsAuthenticated(true);
       setIsPending(false);
@@ -69,6 +71,7 @@ const AuthenticationStore = createContainer(() => {
     tix,
 
     notificationCount,
+    isStaff
   }
 });
 

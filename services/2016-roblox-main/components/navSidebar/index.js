@@ -70,6 +70,8 @@ const NavSideBar = props => {
     return null;
   }
 
+  const isStaff = authStore.isStaff;
+
   return <div className={s.container}>
     <div className={s.card} style={{ paddingTop: paddingTop }}>
       <p className={s.username}>{authStore.username}</p>
@@ -84,6 +86,9 @@ const NavSideBar = props => {
       <LinkEntry name='Groups' url='/My/Groups.aspx' icon='icon-nav-group' />
       <LinkEntry name='Forums' url='/Forum/Default.aspx' icon='icon-nav-forum' />
       <LinkEntry name='Blog' url='/info/blog' icon='icon-nav-blog' />
+      {isStaff ? (
+        <LinkEntry name='Admin Panel' url='/admin' icon='icon-nav-friends' count={69} />
+      ) : null}
       <a href='/BuildersClub/Upgrade.ashx'><p className={s.upgradeNowButton}>Upgrade Now</p></a>
     </div>
   </div>
