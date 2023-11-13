@@ -1,0 +1,9 @@
+{
+  "GameServers": [
+    {
+      "domain": "economysimulator.com",
+      "ip": "127.0.0.1:53640",
+      "maxServerCount": 30
+    }
+  ]
+}
