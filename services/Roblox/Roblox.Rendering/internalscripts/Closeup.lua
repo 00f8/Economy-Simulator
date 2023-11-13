@@ -44,4 +44,4 @@ if player.Character then
 	camera.Parent = player.Character
 end
 
-return game:GetService("ThumbnailGenerator"):Click(fileExtension, x, y, --[[hideSky = ]] true)
+return game:GetService("ThumbnailGenerator"):Click(fileExtension, x, y, --[[hideSky = ]] true, true)
