@@ -175,7 +175,7 @@ namespace Roblox.Rendering
             int x = isFace ? 1680 : 600;
             int y = isFace ? 1680 : 600;
 
-            string originalScript = File.ReadAllText($"{LuaScriptPath}Decal.lua");
+            string originalScript = File.ReadAllText($"{LuaScriptPath}{(isFace ? "Decal" : "Image")}.lua");
             string finalScript = originalScript.Replace
                 ("%assetUrl%", $@"""{assetUrl}""").Replace
                 ("%fileExtension%", $@"""png""").Replace
