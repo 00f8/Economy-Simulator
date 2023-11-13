@@ -1,15 +1,21 @@
 -- Decal v1.0.2
 -- Used for faces and decals
 
-assetUrl, fileExtension, x, y, baseUrl = %assetUrl%, %fileExtension%, %x%, %y%, %baseUrl%
+assetUrl, fileExtension, x, y, baseUrl, isFace = %assetUrl%, %fileExtension%, %x%, %y%, %baseUrl%, %isFace%
 
 pcall(function() game:GetService("ContentProvider"):SetBaseUrl(baseUrl) end) 
 game:GetService('ScriptContext').ScriptsDisabled = true
-
-local decal = game:GetObjects(assetUrl)[1]
-
 local thumbnailGenerator = game:GetService("ThumbnailGenerator")
 
+if isFace then
+    local image, requestedUrls
+    local success = pcall(function()
+    	image = thumbnailGenerator:ClickTexture(assetUrl, fileExtension, x, y)
+    	return image
+    end)
+end
+
+local decal = game:GetObjects(assetUrl)[1]
 local image, requestedUrls
 local success = pcall(function()
 	image, requestedUrls = thumbnailGenerator:ClickTexture(decal.Texture, fileExtension, x, y)

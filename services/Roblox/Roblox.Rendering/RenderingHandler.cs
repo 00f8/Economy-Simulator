@@ -175,13 +175,14 @@ namespace Roblox.Rendering
             int x = isFace ? 1680 : 600;
             int y = isFace ? 1680 : 600;
 
-            string originalScript = File.ReadAllText($"{LuaScriptPath}{(isFace ? "Decal" : "Image")}.lua");
+            string originalScript = File.ReadAllText($"{LuaScriptPath}Decal.lua");
             string finalScript = originalScript.Replace
                 ("%assetUrl%", $@"""{assetUrl}""").Replace
                 ("%fileExtension%", $@"""png""").Replace
                 ("%x%", @$"""{x}""").Replace
                 ("%y%", @$"""{y}""").Replace
-                ("%baseUrl%", $@"""{BaseUrl}/""");
+                ("%baseUrl%", $@"""{BaseUrl}/""").Replace(
+                "%isFace%", isFace.ToString().ToLower());
             
             string XML = $@"<?xml version=""1.0"" encoding=""utf-8""?>
             <soap:Envelope xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance""
