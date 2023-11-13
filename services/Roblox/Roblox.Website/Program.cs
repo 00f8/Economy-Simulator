@@ -41,8 +41,8 @@ Roblox.Configuration.GameServerAuthorization = configuration.GetSection("GameSer
 Roblox.Configuration.BotAuthorization = configuration.GetSection("BotAuthorization").Value;
 Roblox.Configuration.RccAuthorization = configuration.GetSection("RccAuthorization").Value;
 Roblox.Configuration.LuaScriptsDirectory = configuration.GetSection("Directories:RCCLuaScripts").Value;
-//IConfiguration gameServerConfig = new ConfigurationBuilder().AddJsonFile("game-servers.json").Build();
-//Roblox.Configuration.GameServerIpAddresses = gameServerConfig.GetSection("GameServers").Get<IEnumerable<GameServerConfigEntry>>();
+IConfiguration gameServerConfig = new ConfigurationBuilder().AddJsonFile("game-servers.json").Build();
+Roblox.Configuration.GameServerIpAddresses = gameServerConfig.GetSection("GameServers").Get<IEnumerable<GameServerConfigEntry>>();
 Roblox.Configuration.AssetValidationServiceUrl =
     configuration.GetSection("AssetValidation:BaseUrl").Value;
 Roblox.Configuration.AssetValidationServiceAuthorization =
@@ -147,8 +147,8 @@ app.UseMiddleware<FrontendProxyMiddleware>();
 app.UseRobloxLoggingMiddleware();
 
 app.UseExceptionHandler("/error");
-// await CommandHandler.Configure("ws://localhost:3189", "hello world of deving 1234");
-//CommandHandler.Configure(configuration.GetSection("Render:BaseUrl").Value, configuration.GetSection("Render:Authorization").Value); // will be removed soon
+//await CommandHandler.Configure("ws://localhost:3189", "hello world of deving 1234");
+CommandHandler.Configure(configuration.GetSection("Render:BaseUrl").Value, configuration.GetSection("Render:Authorization").Value); // will be removed soon
 SignatureController.Setup();
 RenderingHandler.Configure(configuration.GetSection("BaseUrl").Value, configuration.GetSection("Directories:RCCService").Value, configuration.GetSection("Directories:RCCLuaScripts").Value);
 SessionMiddleware.Configure(configuration.GetSection("Jwt:Sessions").Value);
