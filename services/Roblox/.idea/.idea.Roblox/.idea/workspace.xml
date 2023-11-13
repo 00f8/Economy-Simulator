@@ -8,6 +8,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="334b8d1c-3b9d-4bc2-8d1f-4f41f44071c9" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/Roblox.Rendering/internalscripts/Image.lua" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.Roblox/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Roblox/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Roblox.Rendering/RenderingHandler.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Roblox.Rendering/RenderingHandler.cs" afterDir="false" />
     </list>
@@ -77,6 +78,7 @@
       <updated>1699820671211</updated>
       <workItem from="1699820672294" duration="891000" />
       <workItem from="1699823219630" duration="418000" />
+      <workItem from="1699843957354" duration="737000" />
     </task>
     <servers />
   </component>
