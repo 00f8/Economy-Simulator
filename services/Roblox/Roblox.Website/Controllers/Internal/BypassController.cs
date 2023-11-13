@@ -1,11 +1,12 @@
 using System.ComponentModel.DataAnnotations;
+using System.Dynamic;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.Json;
 using System.Web;
 using System.Xml.Linq;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.Net.Http.Headers;
+using Newtonsoft.Json;
 using Roblox.Dto.Persistence;
 using Roblox.Dto.Users;
 using MVC = Microsoft.AspNetCore.Mvc;
@@ -25,6 +26,7 @@ using Roblox.Website.Middleware;
 using Roblox.Website.WebsiteModels.Asset;
 using Roblox.Website.WebsiteModels.Games;
 using HttpGet = Roblox.Website.Controllers.HttpGetBypassAttribute;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 using MultiGetEntry = Roblox.Dto.Assets.MultiGetEntry;
 using SameSiteMode = Microsoft.AspNetCore.Http.SameSiteMode;
 using ServiceProvider = Roblox.Services.ServiceProvider;
@@ -854,38 +856,52 @@ namespace Roblox.Website.Controllers
             ValidateBotAuthorization();
             return await MigrateItem.MigrateItemFromRoblox(assetId, true, 5, new List<Models.Assets.Type>() { Models.Assets.Type.TeeShirt, Models.Assets.Type.Shirt, Models.Assets.Type.Pants });
         }
-
-        [HttpGetBypass("/apisite/clientsettings/Setting/QuietGet/ClientAppSettings")]
-        [HttpGetBypass("/apisite/clientsettings/Setting/QuietGet/RccAppSettings")]
-        [HttpGetBypass("/apisite/clientsettings/Setting/QuietGet/FireFoxAppSettings")]
-        [HttpGetBypass("/apisite/clientsettings/Setting/QuietGet/ChromeAppSettings")]
-        public Dictionary<string,dynamic> GetAppSettings(string? apiKey = null)
-        {
-            var url = HttpContext.Request.GetEncodedUrl().ToLowerInvariant();
-            var isFirefox = url.Contains("firefox");
-            var isChrome = !isFirefox && url.Contains("chrome");
-            var isClient = url.Contains("clientappsettings");
-            var isRcc = !isClient && url.Contains("rccappsettings") && apiKey == "1234";
-            
-            // Allowed values: string, int, boolean
-            var flags = new FastFlagResult().AddFlags(new List<IFastFlag>
-            {
-                new FastFlag("FlagsLoaded", true),
-                new DFastFlag("SDLRelativeMouseEnabled", true),
-                new DFastFlag("SDLMousePanningFixed", true),
-                new DFastFlag("OLResetPositionOnLoopStart", true, isChrome),
-                new DFastFlag("OLIgnoreErrors", false),
-                new FastFlag("Is18OrOverEnabled", true),
-                new FastFlag("KickEnabled", true),
-            });
-            
-            return flags.ToDictionary();
-        }
-
+        
         [HttpGetBypass("BuildersClub/Upgrade.ashx")]
         public MVC.IActionResult UpgradeNow()
         {
             return new MVC.RedirectResult("/internal/membership");
+        }
+        
+        [HttpGetBypass("GetAllowedMD5Hashes")]
+        public MVC.ActionResult<dynamic> AllowedMD5Hashes()
+        {
+            List<string> allowedList = new List<string>()
+            {
+                "3af59a242d0b7d92ce86e6fbaa21430f"
+            };
+
+            return new { data = allowedList };
+        }
+        
+        [HttpGetBypass("GetAllowedSecurityVersions")]
+        [HttpGetBypass("GetAllowedSecurityKeys")]
+        public MVC.ActionResult<dynamic> AllowedSecurityVersions()
+        {
+            List<string> allowedList = new List<string>()
+            {
+                "0.1.0ecspcplayer"
+            };
+
+            return new { data = allowedList };
+        }
+        
+        [HttpGetBypass("Setting/QuietGet/{type}")]
+        public MVC.ActionResult<dynamic> GetAppSettings(string type)
+        {
+            try
+            {
+                string jsonFilePath = Path.Combine(Configuration.JsonDataDirectory, type + ".json");
+                string jsonContent = System.IO.File.ReadAllText(jsonFilePath);
+                dynamic? clientAppSettingsData = JsonConvert.DeserializeObject<ExpandoObject>(jsonContent);
+
+                return clientAppSettingsData ?? "";
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[RetrieveClientFFlags] Error while retrieving FFlags: {ex.Message}");
+                return new { };
+            }
         }
 
         [HttpGetBypass("abusereport/UserProfile"), HttpGetBypass("abusereport/asset"), HttpGetBypass("abusereport/user"), HttpGetBypass("abusereport/users")]
