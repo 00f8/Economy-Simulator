@@ -15,7 +15,7 @@ namespace Roblox.Website.Controllers;
 public class UsersControllerV1 : ControllerBase
 {
     [HttpGet("users/authenticated")]
-    public async dynamic GetMySession()
+    public async Task<dynamic> GetMySession()
     {
         if (userSession is null) throw new UnauthorizedException();
         return new
