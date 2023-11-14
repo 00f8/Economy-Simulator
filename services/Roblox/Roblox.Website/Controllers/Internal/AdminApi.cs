@@ -2801,17 +2801,9 @@ Thank you for your understanding,
     [StaffFilter(Access.GetGameServers)]
     public async Task<dynamic> GetGameServers()
     {
-        var result = await services.gameServer.GetAllGameServers();
+        var result = services.gameServer.GetAllGameServers();
         var l = new List<dynamic>();
-        foreach (var item in result)
-        {
-            l.Add(new
-            {
-                server = item.Item2,
-                games = item.Item1,
-            });
-        }
-
+        return result;
         return l;
     }
 }

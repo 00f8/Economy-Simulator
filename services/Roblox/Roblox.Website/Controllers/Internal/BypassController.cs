@@ -7,6 +7,7 @@ using System.Xml.Linq;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.Net.Http.Headers;
 using Newtonsoft.Json;
+using Roblox.Dto.Games;
 using Roblox.Dto.Persistence;
 using Roblox.Dto.Users;
 using MVC = Microsoft.AspNetCore.Mvc;
@@ -21,6 +22,7 @@ using Roblox.Models.GameServer;
 using Roblox.Models.Users;
 using Roblox.Services;
 using Roblox.Services.App.FeatureFlags;
+using Roblox.Website.Controllers.Internal;
 using Roblox.Website.Filters;
 using Roblox.Website.Middleware;
 using Roblox.Website.WebsiteModels.Asset;
@@ -475,20 +477,32 @@ namespace Roblox.Website.Controllers
             return new MVC.RedirectResult("/");
         }
 
-        [HttpGetBypass("game/placelauncher.ashx")]
-        [MVC.HttpPost("game/placelauncher.ashx")]
-        public async Task<dynamic> LaunchGame([Required, MVC.FromQuery] long placeId)
+        [HttpGetBypass("/game/PlaceLauncher.ashx")]
+        [HttpPostBypass("/game/PlaceLauncher.ashx")]
+        public async Task<dynamic> PlaceLaunch(long placeId)
         {
+            if (userSession == null)
+            {
+                return BadRequest();
+            }
             FeatureFlags.FeatureCheck(FeatureFlag.GamesEnabled, FeatureFlag.GameJoinEnabled);
-            var result = await services.gameServer.GetServerForPlace(placeId);
+            GameServerJwt details = new GameServerJwt
+            {
+                userId = userSession.userId,
+                placeId = placeId,
+                t = "GameJoinTicketV1.1",
+                iat = DateTimeOffset.Now.ToUnixTimeSeconds(),
+                ip = GetIP()
+            };
+            var result = await services.gameServer.GetServerForPlace(details.placeId);
             if (result.status == JoinStatus.Joining)
             {
-                await Metrics.GameMetrics.ReportGameJoinPlaceLauncherReturned(placeId);
+                await Roblox.Metrics.GameMetrics.ReportGameJoinPlaceLauncherReturned(details.placeId);
                 return new
                 {
                     jobId = result.job,
                     status = (int)result.status,
-                    joinScriptUrl = Configuration.BaseUrl + "/Game/Join.ashx?jobId=" + result.job,
+                    joinScriptUrl = $"{Configuration.BaseUrl}/Game/Join.ashx?jobId={result.job}&placeId={placeId}",
                     authenticationUrl = Configuration.BaseUrl + "/Login/Negotiate.ashx",
                     authenticationTicket = Request.Cookies[".ROBLOSECURITY"],
                     message = (string?)null,
@@ -520,72 +534,79 @@ namespace Roblox.Website.Controllers
 #endif
 
         [HttpGetBypass("game/join.ashx")]
-        public async Task<dynamic> JoinGame([Required, MVC.FromQuery] string ticket, [Required, MVC.FromQuery] string job)
+        public async Task<dynamic> JoinGame(string jobId, long placeId)
         {
-            FeatureFlags.FeatureCheck(FeatureFlag.GamesEnabled, FeatureFlag.GameJoinEnabled);
-            var clientIp = GetIP();
-            var ticketData = services.gameServer.DecodeTicket(ticket, clientIp);
-            var serverData = services.gameServer.DecodeGameServerTicket(job);
-            var userId = ticketData.userId;
+            GamesService gamesService = new GamesService();
+            PlaceEntry uni = (await gamesService.MultiGetPlaceDetails(new[] { placeId })).First();
+            string username = userSession!.username;
+            long userId = userSession!.userId;
+            string membership;
+            var membership2 = await services.users.GetUserMembership(userId);
+            if (membership2  == null)
+            {
+                membership = "None";
+            }
+            else
+            {
+                membership = (int)membership2!.membershipType == 3 ? "OutrageousBuildersClub" : (int)membership2.membershipType == 2 ? "TurboBuildersClub" : (int)membership2.membershipType == 1 ? "BuildersClub" : "None";
+
+            }
             var userInfo = await services.users.GetUserById(userId);
             var accountAgeDays = DateTime.UtcNow.Subtract(userInfo.created).Days;
-            var statusIs18OrOver = await services.users.Is18Plus(userId);
-            var serverAddress = serverData.domain;
-            // Completely random. IP and Port don't serve a purpose anymore, other than to make the client code happy.
-            var ip = "1.1.1.1";
-            var port = 1111;
-#if DEBUG
-            serverAddress = "localhost:53640";
-#endif
+            string characterAppearanceUrl = $"{Configuration.BaseUrl}/Asset/CharacterFetch.ashx?placeId={placeId}&userId={userId}";
+            DateTime currentUtcDateTime = DateTime.UtcNow;
+            string formattedDateTime = currentUtcDateTime.ToString("M/d/yyyy h:mm:ss tt");
 
-            var placeId = serverData.placeId;
-            var uni = (await services.games.MultiGetPlaceDetails(new[] { placeId })).First();
-            var universeId = uni.universeId;
-            var userData = await services.users.GetUserById(userId);
-            var username = userData.username;
-            var membership = await services.users.GetUserMembership(userId);
-            var membershipType = membership?.membershipType ?? MembershipType.None;
+            string cticket = $"{userId}\n{jobId}\n{formattedDateTime}";
+            string ticketSignature = SignatureController.SignStringResponseForClientFromPrivateKey(cticket);
+            
+            string ticket2 = $"{userId}\n{username}\n{characterAppearanceUrl}\n{jobId}\n{formattedDateTime}";
+            string ticketSignature2 = SignatureController.SignStringResponseForClientFromPrivateKey(ticket2);
+            string finalTicket = $"{formattedDateTime};{ticketSignature2};{ticketSignature}";
+            FeatureFlags.FeatureCheck(FeatureFlag.GamesEnabled, FeatureFlag.GameJoinEnabled);
 
-            return new
+            dynamic joinScript = new
             {
                 ClientPort = 0,
-                MachineAddress = ip,
-                WebsocketAddress = serverAddress,
-                ServerPort = port,
+                MachineAddress = "75.162.0.5",
+                ServerPort = GameServerService.currentGameServerPorts[jobId],
                 PingUrl = "",
                 PingInterval = 120,
                 UserName = username,
                 SeleniumTestMode = false,
                 UserId = userId,
-                ClientTicket = ticket,
                 SuperSafeChat = false,
+                CharacterAppearance =
+                    $"{Configuration.BaseUrl}/Asset/CharacterFetch.ashx?placeId={placeId}&userId={userId}",
+                ClientTicket = finalTicket,
+                GameId = jobId,
                 PlaceId = placeId,
                 MeasurementUrl = "",
                 WaitingForCharacterGuid = Guid.NewGuid().ToString(),
                 BaseUrl = Configuration.BaseUrl,
-                ChatStyle = "ClassicAndBubble", // "Classic", "Bubble", or "ClassicAndBubble"
+                ChatStyle = "ClassicAndBubble",
                 VendorId = 0,
                 ScreenShotInfo = "",
                 VideoInfo = "",
                 CreatorId = uni.builderId,
-                CreatorTypeEnum = uni.builderType,
-                MembershipType = membershipType,
+                CreatorTypeEnum = "User",
+                MembershipType = membership,
                 AccountAge = accountAgeDays,
                 CookieStoreFirstTimePlayKey = "rbx_evt_ftp",
                 CookieStoreFiveMinutePlayKey = "rbx_evt_fmp",
                 CookieStoreEnabled = true,
-                IsRobloxPlace = false, // todo?
-                UniverseId = universeId,
+                IsRobloxPlace = uni.builderId == 1,
                 GenerateTeleportJoin = false,
                 IsUnknownOrUnder13 = false,
-                Is18OrOver = statusIs18OrOver,
-                SessionId = Guid.NewGuid().ToString() + "|" + new Guid().ToString() + "|" + "0" + "|" + "127.0.0.1" + "|" + "8" + "|" + DateTime.UtcNow.ToString("O") + "|0|null|null",
+                SessionId = "",
                 DataCenterId = 0,
-                FollowUserId = 0,
+                UniverseId = 0,
                 BrowserTrackerId = 0,
                 UsePortraitMode = false,
-                CharacterAppearance = Configuration.BaseUrl + "/Asset/CharacterFetch.ashx?userId=" + userId,
+                FollowUserId = 0
             };
+            Console.WriteLine("hi");
+            return SignatureController.SignJsonResponseForClientFromPrivateKey(joinScript);
         }
 
         [HttpGetBypass("Asset/CharacterFetch.ashx")]
@@ -804,7 +825,7 @@ namespace Roblox.Website.Controllers
             return new XDocument(robloxRoot).ToString();
         }
 
-        [MVC.HttpPost("api/moderation/filtertext/")]
+        [MVC.HttpPost("/moderation/filtertext/")]
         public dynamic GetModerationText()
         {
             var text = HttpContext.Request.Form["text"].ToString();
