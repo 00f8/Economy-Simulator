@@ -151,8 +151,6 @@ public class ApplicationWebsiteService : WebsiteService
                 case SocialMediaSite.YoutubeChannelId:
                 case SocialMediaSite.YoutubeChannelName:
                 case SocialMediaSite.RedditUsername:
-                case SocialMediaSite.V3rmillionUserId:
-                case SocialMediaSite.SteamUserId:
                     // Don't add verified stuff since we don't have access to these apis :(
                     socialUrl = socialData.url;
                     break;

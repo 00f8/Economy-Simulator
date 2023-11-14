@@ -216,7 +216,7 @@ public class Application : RobloxPageModel
         catch (InvalidSocialMediaUrlException)
         {
             errorMessage =
-                "Please enter a valid social media URL. Specifically, we allow Roblox profiles, YouTube channels, Twitter accounts, v3rmillion accounts, TikTok profiles, Steam accounts, and Reddit accounts.";
+                "Please enter a valid social media URL. Specifically, we allow Roblox profiles, YouTube channels, Twitter accounts, TikTok profiles, and Reddit accounts.";
             return new PageResult();
         }
         catch (AccountTooNewException)
