@@ -456,9 +456,17 @@ namespace Roblox.Website.Controllers
         }
 
         [HttpGet("login/negotiate.ashx"), HttpGet("login/negotiateasync.ashx")]
-        public async Task Negotiate([Required, MVC.FromQuery] string suggest)
+        public void Negotiate([Required, MVC.FromQuery] string suggest)
         {
-            var domain = Request.Headers["rbxauthenticationnegotiation"].FirstOrDefault();
+            HttpContext.Response.Cookies.Append(".ROBLOSECURITY", suggest, new CookieOptions
+            {
+                Domain = ".economysimulator.com",
+                Secure = false,
+                Expires = DateTimeOffset.Now.Add(TimeSpan.FromDays(364)),
+                IsEssential = true,
+                Path = "/",
+                SameSite = SameSiteMode.Lax,
+            });
         }
 
         [HttpGet("/auth/submit")]
@@ -467,25 +475,22 @@ namespace Roblox.Website.Controllers
             return new MVC.RedirectResult("/");
         }
 
-        [HttpGetBypass("placelauncher.ashx")]
-        [MVC.HttpPost("placelauncher.ashx")]
-        public async Task<dynamic> LaunchGame([Required, MVC.FromQuery] string ticket)
+        [HttpGetBypass("game/placelauncher.ashx")]
+        [MVC.HttpPost("game/placelauncher.ashx")]
+        public async Task<dynamic> LaunchGame([Required, MVC.FromQuery] long placeId)
         {
             FeatureFlags.FeatureCheck(FeatureFlag.GamesEnabled, FeatureFlag.GameJoinEnabled);
-            var ip = GetIP();
-            var details = services.gameServer.DecodeTicket(ticket, ip);
-            var result = await services.gameServer.GetServerForPlace(details.placeId);
+            var result = await services.gameServer.GetServerForPlace(placeId);
             if (result.status == JoinStatus.Joining)
             {
-                await Roblox.Metrics.GameMetrics.ReportGameJoinPlaceLauncherReturned(details.placeId);
+                await Metrics.GameMetrics.ReportGameJoinPlaceLauncherReturned(placeId);
                 return new
                 {
                     jobId = result.job,
                     status = (int)result.status,
-                    joinScriptUrl = Configuration.BaseUrl + "/Game/join.ashx?ticket=" + HttpUtility.UrlEncode(ticket) +
-                                    "&job=" + HttpUtility.UrlEncode(result.job),
+                    joinScriptUrl = Configuration.BaseUrl + "/Game/Join.ashx?jobId=" + result.job,
                     authenticationUrl = Configuration.BaseUrl + "/Login/Negotiate.ashx",
-                    authenticationTicket = ticket,
+                    authenticationTicket = Request.Cookies[".ROBLOSECURITY"],
                     message = (string?)null,
                 };
             }

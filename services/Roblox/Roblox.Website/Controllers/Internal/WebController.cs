@@ -458,16 +458,12 @@ public class WebController : ControllerBase
         if (placeInfo.assetType != Models.Assets.Type.Place) throw new BadRequestException();
         var modInfo = (await services.assets.MultiGetAssetDeveloperDetails(new[] {placeId})).First();
         if (modInfo.moderationStatus != ModerationStatus.ReviewApproved) throw new BadRequestException();
-
-        var ipAddress = GetIP();
-        var ticket = services.gameServer.CreateTicket(userSession.userId, placeId, ipAddress);
-        var encodedTicket = HttpUtility.UrlEncode(ticket);
         var args =
-            $"--authenticationUrl {Roblox.Configuration.BaseUrl}/Login/Negotiate.ashx --authenticationTicket {ticket} --joinScriptUrl {Configuration.BaseUrl}/placelauncher.ashx?ticket={encodedTicket}";
+            $"--authenticationUrl {Roblox.Configuration.BaseUrl}/Login/Negotiate.ashx --authenticationTicket {Request.Cookies[".ROBLOSECURITY"]} --joinScriptUrl {Configuration.BaseUrl}/game/placelauncher.ashx?placeId={placeId}";
         return new
         {
-            joinScriptUrl = Configuration.BaseUrl + "/placelauncher.ashx?ticket=" + encodedTicket,
-            retroArgs = $"-a {Roblox.Configuration.BaseUrl}/Login/Negotiate.ashx -t {ticket} -j {Configuration.BaseUrl}/placelauncher.ashx?ticket={encodedTicket}"
+            joinScriptUrl = Configuration.BaseUrl + "/game/placelauncher.ashx?ticket=" + Request.Cookies[".ROBLOSECURITY"],
+            retroArgs = args
         };
     }
 

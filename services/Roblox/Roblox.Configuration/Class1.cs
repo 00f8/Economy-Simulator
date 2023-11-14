@@ -9,6 +9,12 @@ public class GameServerConfigEntry
     public int maxServerCount { get; set; }
 }
 
+public class GameServerV2ConfigEntry
+{
+    public string ip { get; set; }
+    public int maxServerCount { get; set; }
+}
+
 public static class Configuration
 {
     public static string CdnBaseUrl { get; set; }

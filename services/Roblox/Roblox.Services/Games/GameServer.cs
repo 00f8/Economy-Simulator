@@ -382,8 +382,17 @@ public class GameServerService : ServiceBase
 
         throw new ArgumentOutOfRangeException();
     }
-
-    public async Task<List<Tuple<GameServerInfoResponse,GameServerConfigEntry>>> GetAllGameServers()
+    
+    public GameServerConfigEntry GetAllGameServers()
+    {
+        return new GameServerConfigEntry
+        {
+            ip = "75.162.0.5",
+            maxServerCount = 100
+        };
+    }
+    
+    /*public async Task<List<Tuple<GameServerInfoResponse,GameServerConfigEntry>>> GetAllGameServers()
     {
         var getServerDataTasks = new List<Task<GameServerInfoResponse?>>();
         foreach (var entry in Configuration.GameServerIpAddresses)
@@ -401,9 +410,9 @@ public class GameServerService : ServiceBase
             .Where(v => v.Item1 != null)
             .ToList();
         return serverData!;
-    }
+    }*/
 
-    private async Task<GameServerGetOrCreateResponse> GetServerForPlaceV2(long placeId)
+    /*private async Task<GameServerGetOrCreateResponse> GetServerForPlaceV2(long placeId)
     {
         await using var serverCreationLock = await Cache.redLock.CreateLockAsync("CreateGameServerV1", TimeSpan.FromSeconds(30));
         if (!serverCreationLock.IsAcquired)
@@ -522,6 +531,32 @@ public class GameServerService : ServiceBase
                 job = CreateGameServerTicket(placeId, gamePort.ApplyIdToUrl(entry.domain)),
             };
         }
+        
+        // Default
+        return new()
+        {
+            status = JoinStatus.Waiting,
+        };
+    }
+    */
+
+    private async Task<GameServerGetOrCreateResponse> GetServerForPlaceV2(long placeId)
+    {
+        await using var serverCreationLock = await Cache.redLock.CreateLockAsync("CreateGameServerV1", TimeSpan.FromSeconds(30));
+        if (!serverCreationLock.IsAcquired)
+            return new GameServerGetOrCreateResponse
+            {
+                status = JoinStatus.Waiting,
+            };
+        
+        var serverData = GetAllGameServers();
+        long maxPlayerCount;
+        using (var gs = ServiceProvider.GetOrCreate<GamesService>())
+        {
+            maxPlayerCount = await gs.GetMaxPlayerCount(placeId);
+        }
+        
+        
         
         // Default
         return new()
