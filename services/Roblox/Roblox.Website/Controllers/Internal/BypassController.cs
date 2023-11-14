@@ -170,7 +170,7 @@ namespace Roblox.Website.Controllers
                 }
                 catch (RecordNotFoundException)
                 {
-                    if (await Services.Cache.distributed.StringGetAsync(invalidIdKey) != null)
+                    /*if (await Services.Cache.distributed.StringGetAsync(invalidIdKey) != null)
                         throw new RobloxException(400, 0, "Asset is invalid or does not exist");
                     
                     try
@@ -215,6 +215,8 @@ namespace Roblox.Website.Controllers
                             "{}", TimeSpan.FromMinutes(1));
                         throw new RobloxException(400, 0, "Asset is invalid or does not exist");
                     }
+                    */
+                    return Redirect($"https://assetdelivery.roblox.com/v1/asset/?id={assetId}");
                 }
                 details = await services.assets.GetAssetCatalogInfo(assetId);
             }
