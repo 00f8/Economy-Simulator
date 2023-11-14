@@ -15,7 +15,6 @@ local isDebugServer = false;
 -- end dyanmically edited
 
 -- Loaded by StartGameSharedScript --
-pcall(function() game:SetCreatorID(creatorId, creatorType) end)
 --[[
 	-- TODO: something is fucking up our strings when we try to use try to call SetUrl()
 pcall(function() game:GetService("SocialService"):SetFriendUrl(url .. "/Game/LuaWebService/HandleSocialRequest.ashx?method=IsFriendsWith&playerid=%d&userid=%d") end)
