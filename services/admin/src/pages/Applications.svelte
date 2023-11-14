@@ -36,14 +36,11 @@ import DropdownButton from "../components/misc/DropdownButton.svelte";
 		"http://www.roblox.com/",
 		"http://roblox.com/",
 		"https://roblox.com/",
-		"https://v3rmillion.net/",
-		"https://www.v3rmillion.net/",
 		"https://www.tiktok.com/",
 		"https://tiktok.com/",
 		"https://www.instagram.com/",
 		"https://instagram.com/",
 		"https://mobile.twitter.com/",
-		"https://steamcommunity.com/",
 	];
 
 	const isGoodPrefix = (url) => {
