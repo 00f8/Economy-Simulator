@@ -630,6 +630,8 @@ namespace Roblox.Website.Controllers
         [MVC.HttpPost("/gs/activity")]
         public async Task<dynamic> GetGsActivity([Required, MVC.FromBody] ReportActivity request)
         {
+            Console.WriteLine(request.authorization);
+
             CheckServerAuth(request.authorization);
             var result = await services.gameServer.GetLastServerPing(request.serverId);
             return new
@@ -642,6 +644,8 @@ namespace Roblox.Website.Controllers
         [MVC.HttpPost("/gs/ping")]
         public async Task ReportServerActivity([Required, MVC.FromBody] ReportActivity request)
         {
+            Console.WriteLine(request.authorization);
+
             CheckServerAuth(request.authorization);
             await services.gameServer.SetServerPing(request.serverId);
         }
