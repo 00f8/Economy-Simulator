@@ -894,7 +894,7 @@ namespace Roblox.Website.Controllers
         {
             List<string> allowedList = new List<string>()
             {
-                "3af59a242d0b7d92ce86e6fbaa21430f"
+                "9430a0ef797805865b4696f4f028ce13"
             };
 
             return new { data = allowedList };
