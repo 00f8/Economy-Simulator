@@ -627,7 +627,7 @@ namespace Roblox.Website.Controllers
             }
         }
 
-        [MVC.HttpPost("/gs/activity")]
+        [HttpPostBypass("/gs/activity")]
         public async Task<dynamic> GetGsActivity([Required, MVC.FromBody] ReportActivity request)
         {
             Console.WriteLine(request.authorization);
@@ -641,30 +641,28 @@ namespace Roblox.Website.Controllers
             };
         }
 
-        [MVC.HttpPost("/gs/ping")]
+        [HttpPostBypass("/gs/ping")]
         public async Task ReportServerActivity([Required, MVC.FromBody] ReportActivity request)
         {
-            Console.WriteLine(request.authorization);
-
             CheckServerAuth(request.authorization);
             await services.gameServer.SetServerPing(request.serverId);
         }
 
-        [MVC.HttpPost("/gs/delete")]
+        [HttpPostBypass("/gs/delete")]
         public async Task DeleteServer([Required, MVC.FromBody] ReportActivity request)
         {
             CheckServerAuth(request.authorization);
             await services.gameServer.DeleteGameServer(request.serverId);
         }
 
-        [MVC.HttpPost("/gs/shutdown")]
+        [HttpPostBypass("/gs/shutdown")]
         public void ShutDownServer([Required, MVC.FromBody] ReportActivity request)
         {
             CheckServerAuth(request.authorization);
             services.gameServer.ShutDownServer(request.serverId);
         }
 
-        [MVC.HttpPost("/gs/players/report")]
+        [HttpPostBypass("/gs/players/report")]
         public async Task ReportPlayerActivity([Required, MVC.FromBody] ReportPlayerActivity request)
         {
             CheckServerAuth(request.authorization);
@@ -683,14 +681,14 @@ namespace Roblox.Website.Controllers
             }
         }
 
-        [MVC.HttpPost("/gs/a")]
+        [HttpPostBypass("/gs/a")]
         public void ReportGS()
         {
             // Doesn't do anything yet. See: services/api/src/controllers/bypass.ts:1473
             return;
         }
 
-        [MVC.HttpPost("/Game/ValidateTicket.ashx")]
+        [HttpPostBypass("/Game/ValidateTicket.ashx")]
         public async Task<string> ValidateClientTicketRcc([Required, MVC.FromBody] ValidateTicketRequest request)
         {
 #if DEBUG
@@ -753,7 +751,7 @@ namespace Roblox.Website.Controllers
             }
         }
 
-        [MVC.HttpPost("/game/validate-machine")]
+        [HttpPostBypass("/game/validate-machine")]
         public dynamic ValidateMachine()
         {
             return new
