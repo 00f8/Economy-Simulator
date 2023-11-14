@@ -9,6 +9,7 @@ local port = %port%;
 local placeId = %placeId%;
 local creatorType = Enum.CreatorType.User;
 local creatorId = %creatorId%;
+local authKey = "adr3092f90g8902g0924ojigwrwnrjlknkwjrgjnkwrnkjggwrkjng"
 local placeVersionId = 0;
 local vipServerOwnerId = 0;
 local isDebugServer = false;
@@ -161,7 +162,7 @@ local function reportPlayerEvent(userId, t)
     -- wrapped in pcall to prevent keys spilling in error logs
 	local ok, msg = pcall(function()
 		local msg = http:JSONEncode({
-			["authorization"] = "_AUTHORIZATION_STRING_",
+			["authorization"] = authKey,
 			["serverId"] = game.JobId,
 			["userId"] = tostring(userId),
 			["eventType"] = t,
@@ -177,7 +178,7 @@ print("[info] jobId is", game.JobId);
 local function pollToReportActivity()
 	local function sendPing()
 		game:HttpPost(url .. "/gs/ping", http:JSONEncode({
-			["authorization"] = "_AUTHORIZATION_STRING_",
+			["authorization"] = authKey,
 			["serverId"] = game.JobId,
 			["placeId"] = placeId,
 		}), false, "application/json");
@@ -201,7 +202,7 @@ local function shutdown()
 	end
 	pcall(function()
 		game:HttpPost(url .. "/gs/shutdown", http:JSONEncode({
-			["authorization"] = "_AUTHORIZATION_STRING_",
+			["authorization"] = authKey,
 			["serverId"] = game.JobId,
 			["placeId"] = placeId,
 		}), false, "application/json");
