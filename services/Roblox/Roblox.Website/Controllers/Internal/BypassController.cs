@@ -654,10 +654,10 @@ namespace Roblox.Website.Controllers
         }
 
         [MVC.HttpPost("/gs/shutdown")]
-        public async Task ShutDownServer([Required, MVC.FromBody] ReportActivity request)
+        public void ShutDownServer([Required, MVC.FromBody] ReportActivity request)
         {
             CheckServerAuth(request.authorization);
-            await services.gameServer.ShutDownServer(request.serverId);
+            services.gameServer.ShutDownServer(request.serverId);
         }
 
         [MVC.HttpPost("/gs/players/report")]
