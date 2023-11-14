@@ -60,7 +60,9 @@ Roblox.Configuration.SignupAvatarAssetIds =
 Roblox.Configuration.RobloxAppPrefix = "rbxeconsimdev:";
 #endif
 FeatureFlags.StartUpdateFlagTask();
-Roblox.Website.Filters.StaffFilter.Configure(long.Parse(configuration.GetSection("OwnerUserId").Value));
+var ownerUserIdConfig = configuration.GetSection("OwnerUserId");
+List<long> ownerUserIds = ownerUserIdConfig.Get<List<long>>();
+Roblox.Website.Filters.StaffFilter.Configure(ownerUserIds);
 Roblox.Website.Controllers.ThumbnailsControllerV1.StartThumbnailFixLoop();
 
 // Add services to the container.

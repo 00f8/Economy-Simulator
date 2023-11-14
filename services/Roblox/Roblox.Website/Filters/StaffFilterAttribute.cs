@@ -8,8 +8,8 @@ namespace Roblox.Website.Filters;
 
 public class StaffFilter : ActionFilterAttribute, IAsyncActionFilter
 {
-    private static long ownerUserId { get; set; }
-    public static void Configure(long newOwnerUserId)
+    private static List<long> ownerUserId { get; set; } = new List<long>();
+    public static void Configure(List<long> newOwnerUserId)
     {
         ownerUserId = newOwnerUserId;
         Console.WriteLine("[info] owner = {0}",ownerUserId);
@@ -25,15 +25,17 @@ public class StaffFilter : ActionFilterAttribute, IAsyncActionFilter
             list.Add(staff.userId);
         }
         
-        if (!list.Contains(ownerUserId))
-            list.Add(ownerUserId);
+        foreach (var owner in ownerUserId)
+        {
+            list.Add(owner);
+        }
 
         return list;
     }
 
     public static bool IsOwner(long userId)
     {
-        return ownerUserId == userId;
+        return ownerUserId.Contains(userId);
     }
     
     public static async Task<bool> IsStaff(long userId)
@@ -85,7 +87,7 @@ public class StaffFilter : ActionFilterAttribute, IAsyncActionFilter
             return;
         }
 
-        if (ownerUserId == userInfo.userId)
+        if (ownerUserId.Contains(userInfo.userId))
         {
             await next();
             return;
