@@ -1917,6 +1917,7 @@ Thank you for your understanding,
     [HttpPost("asset/copy-from-roblox"), StaffFilter(Access.CreateAssetCopiedFromRoblox)]
     public async Task<dynamic> CopyAssetFromRoblox([Required, FromBody] CopyAssetRequest request)
     {
+        var permissions = (await services.users.GetStaffPermissions(safeUserSession.userId)).Select(c => c.permission).ToArray();
         if (!request.force)
         {
             // Check duplicate id first
@@ -1959,7 +1960,7 @@ Thank you for your understanding,
         
         if (details.IsLimited == true || details.IsLimitedUnique == true)
         {
-            if (!StaffFilter.IsOwner(safeUserSession.userId))
+            if (!permissions.Contains(Access.MakeItemLimited))
                 throw new StaffException("You do not have permission to copy a limited item");
         }
         

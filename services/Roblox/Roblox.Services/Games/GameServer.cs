@@ -30,6 +30,8 @@ public class GameServerService : ServiceBase
     private static Dictionary<string, Process> jobRccs = new Dictionary<string, Process>(); // jobid, rcc process
     public static Dictionary<string, int> currentGameServerPorts = new Dictionary<string, int>() {}; // networkserver ports, jobid, port
     private static Dictionary<long, string> currentPlaceIdsInUse = new Dictionary<long, string>(); // placeid, jobid
+    public static Dictionary<long, long> CurrentPlayersInGame = new Dictionary<long, long>() { }; // userid, placeid
+    public static Dictionary<Process, int> mainRCCPortsInUse = new Dictionary<Process, int>(); // Process, main RCC soap port
     public static void Configure(string newJwtKey)
     {
         jwtKey = newJwtKey;
@@ -124,7 +126,7 @@ public class GameServerService : ServiceBase
 
     public async Task OnPlayerJoin(long userId, long placeId, string serverId)
     {
-        await db.ExecuteAsync(
+        /*await db.ExecuteAsync(
             "INSERT INTO asset_server_player (asset_id, user_id, server_id) VALUES (:asset_id, :user_id, :server_id::uuid)",
             new
             {
@@ -132,6 +134,8 @@ public class GameServerService : ServiceBase
                 user_id = userId,
                 server_id = serverId,
             });
+            */
+        CurrentPlayersInGame.Add(userId, placeId);
         await InsertAsync("asset_play_history", new
         {
             asset_id = placeId,
@@ -182,12 +186,7 @@ public class GameServerService : ServiceBase
 
     public async Task OnPlayerLeave(long userId, long placeId, string serverId)
     {
-        await db.ExecuteAsync(
-            "DELETE FROM asset_server_player WHERE user_id = :user_id AND server_id = :server_id::uuid", new
-            {
-                server_id = serverId,
-                user_id = userId,
-            });
+        CurrentPlayersInGame.Remove(userId);
         var latestSession = await db.QuerySingleOrDefaultAsync<AssetPlayEntry>(
             "SELECT id, created_at as createdAt FROM asset_play_history WHERE user_id = :user_id AND asset_id = :asset_id AND ended_at IS NULL ORDER BY asset_play_history.id DESC LIMIT 1",
             new
@@ -287,18 +286,53 @@ public class GameServerService : ServiceBase
             new List<dynamic> {placeId, gameServerId, gameServerPort});
     }
 
-    public async Task ShutDownServer(string serverId)
+    public void ShutDownServer(string serverId)
     {
-        var data = await db.QuerySingleOrDefaultAsync("SELECT server_connection, asset_id FROM asset_server WHERE id = :id::uuid",
-            new {id = serverId});
-        if (data == null) throw new RecordNotFoundException();
-        var allPlayers = await GetGameServerPlayers(serverId);
-        foreach (var futureOrphan in allPlayers)
+        // TODO: When we add multiple servers for the same game (most likely not for a while), get the jobId or kill the server a better way.
+        string placeJobId = serverId; // hopefully not null, shouldn't be??
+        long placeId = GetPlaceIdByJobId(serverId);
+        Process rccProcess = jobRccs[placeJobId];
+        rccProcess.Kill(); // soft kill soon instead of force kill
+            
+        // Remove from our dictionaries now.
+        currentPlaceIdsInUse.Remove(placeId);
+        currentGameServerPorts.Remove(placeJobId);
+        jobRccs.Remove(placeJobId);
+        mainRCCPortsInUse.Remove(rccProcess);
+        RemoveAllPlayersFromPlaceId(placeId);
+        Console.WriteLine($"GameServer {placeJobId} (place {placeId}) was successfully closed!");
+    }
+    
+    public static void RemoveAllPlayersFromPlaceId(long placeId)
+    {
+        List<long> playersToRemove = CurrentPlayersInGame.Where(kvp => kvp.Value == placeId).Select(kvp => kvp.Key).ToList();
+    
+        foreach (var playerID in playersToRemove)
         {
-            await OnPlayerLeave(futureOrphan.userId, (long)data.asset_id, serverId);
+            CurrentPlayersInGame.Remove(playerID);
         }
-        var split = ((string) data.server_connection).Split(":");
-        await PostToGameServer<GameServerEmptyResponse>(split[0], split[1], "shutdown", new List<dynamic> { serverId });
+    }
+    
+    public static long GetUserPlaceId(long userId) // get user game is in
+    {
+        bool isInGame = CurrentPlayersInGame.ContainsKey(userId);
+        if (!isInGame)
+            return 0;
+
+        return CurrentPlayersInGame[userId];
+    }
+    
+    public static long GetPlaceIdByJobId(string jobId)
+    {
+        foreach (var kvp in currentPlaceIdsInUse)
+        {
+            if (kvp.Value == jobId)
+            {
+                return kvp.Key;
+            }
+        }
+            
+        return 0; // we never throw exceptions. EVER.
     }
 
     public async Task<DateTime> GetLastServerPing(string serverId)
