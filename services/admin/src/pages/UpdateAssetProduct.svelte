@@ -15,6 +15,7 @@
 	let dirtyAssetId: string = assetId ? assetId.toString() : ''
 	interface IDetailsResponse {
 		name: string;
+		description: string | null;
 		isForSale: boolean;
 		isLimited: boolean;
 		isLimitedUnique: boolean;
@@ -22,6 +23,7 @@
 		priceTickets: number|null;
 		serialCount: number | null;
 		offsaleAt: string | null;
+//		hidden: boolean;   [[ will implement at later date - shady ]]
 	}
 	let assetDetails: Partial<IDetailsResponse> = {};
 	let latestFetch;
@@ -96,6 +98,14 @@
 				<div class="row">
 					<div class="col-12">
 						<h2 class="mt-2 mb-2">Editing "{assetDetails.name}"</h2>
+					</div>
+					<div class="col-2">
+						<label for="name">Name</label>
+						<input type="text" class="form-control" id="assetName" {disabled} value={assetDetails.name || ""} />
+					</div>
+					<div class="col-12">
+						<label for="description">Description</label>
+						<input type="text" class="form-control" id="description" {disabled} value={assetDetails.description || ""} />
 					</div>
 					<div class="col-2">
 						<label for="name">R$ Price (Optional)</label>
@@ -185,11 +195,23 @@
 					}else{
 						priceTickets = null;
 					}
+
+					let description = getElementById('description').value
+					if (description === null) {
+						description = "No description available."
+					}
+
+					let assetName = getElementById('assetName').value
+					if (assetName === null) {
+						assetName = assetDetails.name
+					}
 					
 					disabled = true;
 					request
 						.patch("/asset/product", {
 							assetId,
+							assetName,
+							description,
 							isForSale: getElementById("is_for_sale").checked,
 							maxCopies: maxSerial,
 							priceRobux: price,

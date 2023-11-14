@@ -130,6 +130,8 @@ public class ReRenderRequest
 public class UpdateProductRequest
 {
     public long assetId { get; set; }
+    public string description { get; set; }
+    public string assetName { get; set; }
     public bool isForSale { get; set; }
     public bool isLimited { get; set; }
     public bool isLimitedUnique { get; set; }

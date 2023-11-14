@@ -996,6 +996,22 @@ public class AssetsService : ServiceBase, IService
         });
     }
 
+    public async Task UpdateAssetMarketInfoName(long assetId, string productName)
+    {
+        await UpdateAsync("asset", assetId, new
+        {
+            name = productName
+        });
+    }
+
+    public async Task UpdateAssetMarketDescriptionInfo(long assetId, string _description)
+    {
+        await UpdateAsync("asset", assetId, new
+        {
+            description = _description
+        });
+    }
+
     [Obsolete("Use UpdateAssetMarketInfo() without the price to update product data, or SetItemPrice to set the price")]
     public async Task UpdateAssetMarketInfo(long assetId, bool isForSale, bool isLimited, bool isLimitedUnique,
         int? price, int? maxCopies, DateTime? offsaleDeadline)
