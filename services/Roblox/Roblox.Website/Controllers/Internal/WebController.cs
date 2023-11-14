@@ -462,7 +462,7 @@ public class WebController : ControllerBase
             $"--authenticationUrl {Roblox.Configuration.BaseUrl}/Login/Negotiate.ashx --authenticationTicket {Request.Cookies[".ROBLOSECURITY"]} --joinScriptUrl {Configuration.BaseUrl}/game/placelauncher.ashx?placeId={placeId}";
         return new
         {
-            joinScriptUrl = Configuration.BaseUrl + "/game/placelauncher.ashx?ticket=" + Request.Cookies[".ROBLOSECURITY"],
+            joinScriptUrl = $"-a http://economysimulator.com/Login/Negotiate.ashx -t {Request.Cookies[".ROBLOSECURITY"]} -j http://economysimulator.com/game/PlaceLauncher.ashx?placeId={placeId}",
             retroArgs = args
         };
     }
