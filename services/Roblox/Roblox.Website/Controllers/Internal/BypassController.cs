@@ -630,7 +630,11 @@ namespace Roblox.Website.Controllers
         [MVC.HttpPost("/gs/activity")]
         public async Task<dynamic> GetGsActivity([Required, MVC.FromBody] ReportActivity request)
         {
-            CheckServerAuth(request.authorization);
+            string accessKey = Request.Headers["accessKey"];
+            if (accessKey != Configuration.RccAuthorization)
+            {
+                return Forbid();
+            }
             var result = await services.gameServer.GetLastServerPing(request.serverId);
             return new
             {
@@ -642,28 +646,44 @@ namespace Roblox.Website.Controllers
         [MVC.HttpPost("/gs/ping")]
         public async Task ReportServerActivity([Required, MVC.FromBody] ReportActivity request)
         {
-            CheckServerAuth(request.authorization);
+            string accessKey = Request.Headers["accessKey"];
+            if (accessKey != Configuration.RccAuthorization)
+            {
+                return;
+            }
             await services.gameServer.SetServerPing(request.serverId);
         }
 
         [MVC.HttpPost("/gs/delete")]
         public async Task DeleteServer([Required, MVC.FromBody] ReportActivity request)
         {
-            CheckServerAuth(request.authorization);
+            string accessKey = Request.Headers["accessKey"];
+            if (accessKey != Configuration.RccAuthorization)
+            {
+                return;
+            }
             await services.gameServer.DeleteGameServer(request.serverId);
         }
 
         [MVC.HttpPost("/gs/shutdown")]
         public void ShutDownServer([Required, MVC.FromBody] ReportActivity request)
         {
-            CheckServerAuth(request.authorization);
+            string accessKey = Request.Headers["accessKey"];
+            if (accessKey != Configuration.RccAuthorization)
+            {
+                return;
+            }
             services.gameServer.ShutDownServer(request.serverId);
         }
 
         [MVC.HttpPost("/gs/players/report")]
         public async Task ReportPlayerActivity([Required, MVC.FromBody] ReportPlayerActivity request)
         {
-            CheckServerAuth(request.authorization);
+            string accessKey = Request.Headers["accessKey"];
+            if (accessKey != Configuration.RccAuthorization)
+            {
+                return;
+            }
             if (request.eventType == "Leave")
             {
                 await services.gameServer.OnPlayerLeave(request.userId, request.placeId, request.serverId);
@@ -683,6 +703,12 @@ namespace Roblox.Website.Controllers
         public void ReportGS()
         {
             // Doesn't do anything yet. See: services/api/src/controllers/bypass.ts:1473
+            string accessKey = Request.Headers["accessKey"];
+            if (accessKey != Configuration.RccAuthorization)
+            {
+                return;
+            }
+
             return;
         }
 
