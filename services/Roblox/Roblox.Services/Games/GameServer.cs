@@ -634,7 +634,8 @@ public class GameServerService : ServiceBase
         string finalScript = originalScript.Replace
             ("%port%", $"{networkServerPort}").Replace
             ("%placeId%", $"{placeId}").Replace
-            ("%creatorId%", $"{uni.builderId}");
+            ("%creatorId%", $"{uni.builderId}").Replace
+            ("_AUTHORIZATION_STRING_", Configuration.GameServerAuthorization);
         string XML = $@"<?xml version=""1.0"" encoding=""utf-8""?>
             <soap:Envelope xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance""
                xmlns:xsd=""http://www.w3.org/2001/XMLSchema""
