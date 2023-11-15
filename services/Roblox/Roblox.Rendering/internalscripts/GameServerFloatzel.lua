@@ -4,7 +4,7 @@ local http = game:GetService("HttpService");
 http.HttpEnabled = false;
 
 -- begin dynamiclly edited
-local url = "http://www.economysimulator.com";
+local url = "http://economysimulator.com";
 local port = %port%;
 local placeId = %placeId%;
 local creatorType = Enum.CreatorType.User;
@@ -15,12 +15,7 @@ local isDebugServer = false;
 -- end dyanmically edited
 
 -- Loaded by StartGameSharedScript --
-local success, errorMsg = pcall(function())
-    pcall(function() game:SetCreatorID(creatorId, creatorType) end)
-end)
-if errorMsg then
-    print(errorMsg)
-end
+pcall(function() game:SetCreatorID(creatorId, creatorType) end)
 --[[
 	-- TODO: something is fucking up our strings when we try to use try to call SetUrl()
 pcall(function() game:GetService("SocialService"):SetFriendUrl(url .. "/Game/LuaWebService/HandleSocialRequest.ashx?method=IsFriendsWith&playerid=%d&userid=%d") end)
@@ -228,7 +223,7 @@ spawn(function()
 	end
 	pcall(function()
 		adminsList = {}
-		adminsList[3] = true -- 3 is hard coded as admin but doesn't show badge
+		adminsList[12] = true -- 12 is hard coded as admin but doesn't show badge
 		for i,v in ipairs(newList) do
 			adminsList[v] = true
 		end
