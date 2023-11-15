@@ -564,6 +564,7 @@ namespace Roblox.Website.Controllers
             
             string ticket2 = $"{userId}\n{username}\n{characterAppearanceUrl}\n{jobId}\n{formattedDateTime}";
             string ticketSignature2 = SignatureController.SignStringResponseForClientFromPrivateKey(ticket2);
+
             string finalTicket = $"{formattedDateTime};{ticketSignature2};{ticketSignature}";
             FeatureFlags.FeatureCheck(FeatureFlag.GamesEnabled, FeatureFlag.GameJoinEnabled);
 
