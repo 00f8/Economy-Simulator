@@ -643,7 +643,7 @@ public class GameServerService : ServiceBase
                 <soap:Body>
                     <OpenJobEx xmlns=""http://economysimulator.com/"">
                         <job>
-                            <id>{Guid.NewGuid().ToString()}</id>
+                            <id>{jobId}</id>
                             <category>1</category>
                             <cores>1</cores>
                             <expirationInSeconds>{JobExpiration}</expirationInSeconds>
