@@ -579,7 +579,7 @@ namespace Roblox.Website.Controllers
                 UserId = userId,
                 SuperSafeChat = false,
                 CharacterAppearance =
-                    $"{Configuration.BaseUrl}/Asset/CharacterFetch.ashx?placeId={placeId}&userId={userId}",
+                    characterAppearanceUrl,
                 ClientTicket = finalTicket,
                 GameId = jobId,
                 PlaceId = placeId,
