@@ -1,4 +1,3 @@
--- economysimulator.com game server script
 function start(placeId, port, url)
 	------------------- UTILITY FUNCTIONS --------------------------
 	
@@ -16,6 +15,7 @@ function start(placeId, port, url)
 	-----------------------------------END UTILITY FUNCTIONS -------------------------
 	
 	-----------------------------------"CUSTOM" SHARED CODE----------------------------------
+	
 	pcall(function() settings().Network.UseInstancePacketCache = true end)
 	pcall(function() settings().Network.UsePhysicsPacketCache = true end)
 	--pcall(function() settings()["Task Scheduler"].PriorityMethod = Enum.PriorityMethod.FIFO end)
@@ -27,7 +27,6 @@ function start(placeId, port, url)
 	settings().Network.ExperimentalPhysicsEnabled = true
 	settings().Network.WaitingForCharacterLogRate = 100
 	pcall(function() settings().Diagnostics:LegacyScriptMode() end)
-	pcall(function() game:SetCreatorID(%creatorId%, creatorType) end)
 	
 	-----------------------------------START GAME SHARED SCRIPT------------------------------
 	
@@ -108,4 +107,5 @@ function start(placeId, port, url)
 	
 	
 	end
-start(%placeId%, %port%, "http://economysimulator.com")	
+	
+start(%placeId%, %port%, "http://www.economysimulator.com")	
