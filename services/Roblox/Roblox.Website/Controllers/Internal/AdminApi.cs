@@ -191,7 +191,7 @@ public class AdminApiController : ControllerBase
             throw new StaffException("InternalServerError");
         }
 
-        if (safeUserSession.userId != 12)
+        if (!StaffFilter.IsOwner(userSession.userId))
             throw new Exception("InternalServerError");
 
         await services.users.AddStaffPermission(userId, permission);
