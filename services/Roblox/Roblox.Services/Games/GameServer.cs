@@ -423,16 +423,7 @@ public class GameServerService : ServiceBase
         throw new ArgumentOutOfRangeException();
     }
     
-    public GameServerConfigEntry GetAllGameServers()
-    {
-        return new GameServerConfigEntry
-        {
-            ip = "75.162.0.5",
-            maxServerCount = 100
-        };
-    }
-    
-    /*public async Task<List<Tuple<GameServerInfoResponse,GameServerConfigEntry>>> GetAllGameServers()
+    public async Task<List<Tuple<GameServerInfoResponse,GameServerConfigEntry>>> GetAllGameServers()
     {
         var getServerDataTasks = new List<Task<GameServerInfoResponse?>>();
         foreach (var entry in Configuration.GameServerIpAddresses)
@@ -450,7 +441,7 @@ public class GameServerService : ServiceBase
             .Where(v => v.Item1 != null)
             .ToList();
         return serverData!;
-    }*/
+    }
 
     /*private async Task<GameServerGetOrCreateResponse> GetServerForPlaceV2(long placeId)
     {

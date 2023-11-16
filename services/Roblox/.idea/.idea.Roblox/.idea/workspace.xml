@@ -7,7 +7,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="334b8d1c-3b9d-4bc2-8d1f-4f41f44071c9" name="Changes" comment="" />
+    <list default="true" id="334b8d1c-3b9d-4bc2-8d1f-4f41f44071c9" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.Roblox/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Roblox/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Roblox.Services/Games/GameServer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Roblox.Services/Games/GameServer.cs" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -15,6 +18,9 @@
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../.." />
+  </component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/80bbeda04f1e9776c81db5e7a71ee537ff88e08969ee21735ced3b63c5ec462/Tuple.cs" root0="SKIP_HIGHLIGHTING" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 4
@@ -82,6 +88,8 @@
       <workItem from="1700005117059" duration="4279000" />
       <workItem from="1700009640232" duration="606000" />
       <workItem from="1700080086871" duration="212000" />
+      <workItem from="1700091812805" duration="1428000" />
+      <workItem from="1700093343514" duration="1131000" />
     </task>
     <servers />
   </component>
