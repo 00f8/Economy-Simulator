@@ -458,12 +458,13 @@ public class WebController : ControllerBase
         if (placeInfo.assetType != Models.Assets.Type.Place) throw new BadRequestException();
         var modInfo = (await services.assets.MultiGetAssetDeveloperDetails(new[] {placeId})).First();
         if (modInfo.moderationStatus != ModerationStatus.ReviewApproved) throw new BadRequestException();
-        var bootstrapperArgs = $"es-player://1+launchmode:play+gameinfo:${Request.Cookies[".ROBLOSECURITY"]}+placelauncherurl:{Configuration.BaseUrl}/game/PlaceLauncher.ashx?placeId={placeId}+k:l";
+        var bootstrapperArgs = $"://1+launchmode:play+gameinfo:${Request.Cookies[".ROBLOSECURITY"]}+placelauncherurl:{Configuration.BaseUrl}/game/PlaceLauncher.ashx?placeId={placeId}+k:l";
         var args =
             $"--authenticationUrl {Roblox.Configuration.BaseUrl}/Login/Negotiate.ashx --authenticationTicket {Request.Cookies[".ROBLOSECURITY"]} --joinScriptUrl {Configuration.BaseUrl}/game/placelauncher.ashx?placeId={placeId}";
         return new
         {
             joinScriptUrl = bootstrapperArgs,
+            prefix = "es-player",
             retroArgs = args
         };
     }
