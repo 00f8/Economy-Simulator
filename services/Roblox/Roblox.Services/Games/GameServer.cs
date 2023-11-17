@@ -126,7 +126,8 @@ public class GameServerService : ServiceBase
 
     public async Task OnPlayerJoin(long userId, long placeId, string serverId)
     {
-        /*await db.ExecuteAsync(
+        CurrentPlayersInGame.Add(userId, placeId);
+        await db.ExecuteAsync(
             "INSERT INTO asset_server_player (asset_id, user_id, server_id) VALUES (:asset_id, :user_id, :server_id::uuid)",
             new
             {
@@ -134,8 +135,6 @@ public class GameServerService : ServiceBase
                 user_id = userId,
                 server_id = serverId,
             });
-            */
-        CurrentPlayersInGame.Add(userId, placeId);
         await InsertAsync("asset_play_history", new
         {
             asset_id = placeId,
@@ -187,6 +186,12 @@ public class GameServerService : ServiceBase
     public async Task OnPlayerLeave(long userId, long placeId, string serverId)
     {
         CurrentPlayersInGame.Remove(userId);
+        await db.ExecuteAsync(
+            "DELETE FROM asset_server_player WHERE user_id = :user_id AND server_id = :server_id::uuid", new
+            {
+                server_id = serverId,
+                user_id = userId,
+            });
         var latestSession = await db.QuerySingleOrDefaultAsync<AssetPlayEntry>(
             "SELECT id, created_at as createdAt FROM asset_play_history WHERE user_id = :user_id AND asset_id = :asset_id AND ended_at IS NULL ORDER BY asset_play_history.id DESC LIMIT 1",
             new
@@ -355,9 +360,7 @@ public class GameServerService : ServiceBase
 
     public async Task DeleteGameServer(string serverId)
     {
-        // then we can delete it...
-        await db.ExecuteAsync("DELETE FROM asset_server_player WHERE server_id = :id::uuid", new {id = serverId});
-        await db.ExecuteAsync("DELETE FROM asset_server WHERE id = :id::uuid", new {id = serverId});
+        
     }
     
     private static readonly IEnumerable<int> GameServerPorts = new []
