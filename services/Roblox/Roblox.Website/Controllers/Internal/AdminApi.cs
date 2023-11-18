@@ -1787,7 +1787,7 @@ Thank you for your understanding,
             var extraInfo = await services.assets.GetAssetCatalogInfo(request.assetId);
             if (extraInfo.creatorType != CreatorType.User && extraInfo.creatorTargetId != 1)
                 throw new StaffException("You do not have permission to update a product that is not owned by the admin account");
-            var allowedTypes = new List<Type>()
+            /*var allowedTypes = new List<Type>()
             {
                 Type.Hat,
                 Type.FrontAccessory,
@@ -1806,6 +1806,7 @@ Thank you for your understanding,
             };
             if (!allowedTypes.Contains(extraInfo.assetType))
                 throw new StaffException("You do not have permission to update a product that is not a hat, accessory, or package");
+                */
         }
         // check if existing log exists (old products don't have logs)
         var existingLog = await db.QuerySingleOrDefaultAsync<Total>("SELECT count(*) as total FROM moderation_update_product WHERE asset_id = :asset_id", new
