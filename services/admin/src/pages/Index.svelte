@@ -8,7 +8,8 @@
 	let usersOnline: number;
 	let usersInGame: {user_id: number; username: string; asset_id: number; asset_name: string;}[] | undefined;
 	let numPendingAssets: number|undefined;
-	let numPendingText: number|undefined;
+//	let numPendingText: number|undefined; -- not in use, no clue what it's even for - shady
+	let numPendingApplications: number|undefined;
 
 	Promise.all([
 		request.get(`/groups/pending-icons`),
@@ -23,6 +24,9 @@
 	})
 
 	let showInGame = false;
+	request.get("/applications/pending-num").then((data) => {
+		numPendingApplications = data.data.count;
+	});
 	if (rank.hasPermission("GetUserJoinCount")) {
         request.get<{ total: number }>("/user-joins?period=past-hour").then((data) => {
             usersJoinedPastHour = data.data.total;
@@ -41,6 +45,7 @@
 			usersOnline = t.data.total;
 		})
 	}
+	
 	import * as rank from "../stores/rank";
 	import Permission from "../components/Permission.svelte";
 import { get } from 'svelte/store';
@@ -66,11 +71,16 @@ import { now } from 'svelte/internal';
 				showInGame = !showInGame;
 			}} key={((typeof usersOnline === "number" && usersOnline.toLocaleString()) || "-") + '/' + ((usersInGame && usersInGame.length.toLocaleString()) || "-")} value="Users Online and In-Game" cardClasses="bg-primary bg-gradient pointer" />
 		</Permission>
+		{#if numPendingApplications != undefined}
+			<DashStatCard onClick={() => {
+				navigate('/admin/applications');
+			}} value='Pending Applications Count' key={numPendingApplications.toString()} cardClasses="bg-primary bg-gradient pointer" />
+		{/if}
 		{#if numPendingAssets != undefined}
 			<DashStatCard onClick={() => {
 				// window.location.href = '/admin/asset/approval';
 				navigate('/admin/asset/approval');
-			}} value='Num Pending Assets' key={numPendingAssets.toLocaleString()} cardClasses="bg-danger bg-gradient pointer" />
+			}} value='Pending Assets Count' key={numPendingAssets.toLocaleString()} cardClasses="bg-danger bg-gradient pointer" />
 		{/if}
 	</div>
 	{#if showInGame}

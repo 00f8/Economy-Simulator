@@ -2304,6 +2304,17 @@ Thank you for your understanding,
         return result;
     }
 
+    [HttpGet("applications/pending-num")]
+    [StaffFilter(Access.ManageApplications)]
+    public async Task<dynamic> GetNumPendingApplications()
+    {
+        var count = await services.users.CountPendingApplications();
+        return new
+        {
+            count
+        };
+    }
+
     [HttpPost("applications/{applicationId}/approve"), StaffFilter(Access.ManageApplications)]
     public async Task<dynamic> ApproveApplication(string applicationId)
     {
