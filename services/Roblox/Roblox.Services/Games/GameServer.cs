@@ -192,6 +192,7 @@ public class GameServerService : ServiceBase
                 server_id = serverId,
                 user_id = userId,
             });
+        Console.WriteLine("deleted from db line 195 onplayerleave");
         var latestSession = await db.QuerySingleOrDefaultAsync<AssetPlayEntry>(
             "SELECT id, created_at as createdAt FROM asset_play_history WHERE user_id = :user_id AND asset_id = :asset_id AND ended_at IS NULL ORDER BY asset_play_history.id DESC LIMIT 1",
             new
@@ -702,6 +703,7 @@ public class GameServerService : ServiceBase
             {
                 id = server.id,
             });
+            Console.WriteLine("deleted from db line 706 deleteoldgameservers");
             await db.ExecuteAsync("DELETE FROM asset_server WHERE id = :id::uuid", new
             {
                 id = server.id,
@@ -719,6 +721,8 @@ public class GameServerService : ServiceBase
             {
                 id = deadbeatDad,
             });
+            Console.WriteLine("deleted from db line 724 DeleteOldGameServers");
+
         }
     }
 
