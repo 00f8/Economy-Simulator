@@ -398,6 +398,10 @@ namespace Roblox.Website.Controllers
                 bool isInGroup = false;
                 try
                 {
+                    if (groupid == 1200769 && await StaffFilter.IsStaff(playerid ?? 0))
+                    {
+                        isInGroup = true;
+                    }
                     var group = await services.groups.GetUserRoleInGroup((long) groupid, (long) playerid);
                     if (group.rank != 0)
                         isInGroup = true;
