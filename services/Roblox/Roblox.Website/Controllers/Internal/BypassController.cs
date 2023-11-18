@@ -7,6 +7,7 @@ using System.Xml.Linq;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.Net.Http.Headers;
 using Newtonsoft.Json;
+using Roblox.Dto.Games;
 using Roblox.Dto.Persistence;
 using Roblox.Dto.Users;
 using MVC = Microsoft.AspNetCore.Mvc;
@@ -21,6 +22,7 @@ using Roblox.Models.GameServer;
 using Roblox.Models.Users;
 using Roblox.Services;
 using Roblox.Services.App.FeatureFlags;
+using Roblox.Website.Controllers.Internal;
 using Roblox.Website.Filters;
 using Roblox.Website.Middleware;
 using Roblox.Website.WebsiteModels.Asset;
@@ -168,7 +170,7 @@ namespace Roblox.Website.Controllers
                 }
                 catch (RecordNotFoundException)
                 {
-                    if (await Services.Cache.distributed.StringGetAsync(invalidIdKey) != null)
+                    /*if (await Services.Cache.distributed.StringGetAsync(invalidIdKey) != null)
                         throw new RobloxException(400, 0, "Asset is invalid or does not exist");
                     
                     try
@@ -213,6 +215,8 @@ namespace Roblox.Website.Controllers
                             "{}", TimeSpan.FromMinutes(1));
                         throw new RobloxException(400, 0, "Asset is invalid or does not exist");
                     }
+                    */
+                    return Redirect($"https://assetdelivery.roblox.com/v1/asset/?id={assetId}");
                 }
                 details = await services.assets.GetAssetCatalogInfo(assetId);
             }
@@ -456,9 +460,17 @@ namespace Roblox.Website.Controllers
         }
 
         [HttpGet("login/negotiate.ashx"), HttpGet("login/negotiateasync.ashx")]
-        public async Task Negotiate([Required, MVC.FromQuery] string suggest)
+        public void Negotiate([Required, MVC.FromQuery] string suggest)
         {
-            var domain = Request.Headers["rbxauthenticationnegotiation"].FirstOrDefault();
+            HttpContext.Response.Cookies.Append(".ROBLOSECURITY", suggest, new CookieOptions
+            {
+                Domain = ".economysimulator.com",
+                Secure = false,
+                Expires = DateTimeOffset.Now.Add(TimeSpan.FromDays(364)),
+                IsEssential = true,
+                Path = "/",
+                SameSite = SameSiteMode.Lax,
+            });
         }
 
         [HttpGet("/auth/submit")]
@@ -467,13 +479,23 @@ namespace Roblox.Website.Controllers
             return new MVC.RedirectResult("/");
         }
 
-        [HttpGetBypass("placelauncher.ashx")]
-        [MVC.HttpPost("placelauncher.ashx")]
-        public async Task<dynamic> LaunchGame([Required, MVC.FromQuery] string ticket)
+        [HttpGetBypass("/game/PlaceLauncher.ashx")]
+        [HttpPostBypass("/game/PlaceLauncher.ashx")]
+        public async Task<dynamic> PlaceLaunch(long placeId)
         {
+            if (userSession == null)
+            {
+                return BadRequest();
+            }
             FeatureFlags.FeatureCheck(FeatureFlag.GamesEnabled, FeatureFlag.GameJoinEnabled);
-            var ip = GetIP();
-            var details = services.gameServer.DecodeTicket(ticket, ip);
+            GameServerJwt details = new GameServerJwt
+            {
+                userId = userSession.userId,
+                placeId = placeId,
+                t = "GameJoinTicketV1.1",
+                iat = DateTimeOffset.Now.ToUnixTimeSeconds(),
+                ip = GetIP()
+            };
             var result = await services.gameServer.GetServerForPlace(details.placeId);
             if (result.status == JoinStatus.Joining)
             {
@@ -482,10 +504,9 @@ namespace Roblox.Website.Controllers
                 {
                     jobId = result.job,
                     status = (int)result.status,
-                    joinScriptUrl = Configuration.BaseUrl + "/Game/join.ashx?ticket=" + HttpUtility.UrlEncode(ticket) +
-                                    "&job=" + HttpUtility.UrlEncode(result.job),
+                    joinScriptUrl = $"{Configuration.BaseUrl}/Game/Join.ashx?jobId={result.job}&placeId={placeId}",
                     authenticationUrl = Configuration.BaseUrl + "/Login/Negotiate.ashx",
-                    authenticationTicket = ticket,
+                    authenticationTicket = Request.Cookies[".ROBLOSECURITY"],
                     message = (string?)null,
                 };
             }
@@ -515,72 +536,80 @@ namespace Roblox.Website.Controllers
 #endif
 
         [HttpGetBypass("game/join.ashx")]
-        public async Task<dynamic> JoinGame([Required, MVC.FromQuery] string ticket, [Required, MVC.FromQuery] string job)
+        public async Task<dynamic> JoinGame(string jobId, long placeId)
         {
-            FeatureFlags.FeatureCheck(FeatureFlag.GamesEnabled, FeatureFlag.GameJoinEnabled);
-            var clientIp = GetIP();
-            var ticketData = services.gameServer.DecodeTicket(ticket, clientIp);
-            var serverData = services.gameServer.DecodeGameServerTicket(job);
-            var userId = ticketData.userId;
+            GamesService gamesService = new GamesService();
+            PlaceEntry uni = (await gamesService.MultiGetPlaceDetails(new[] { placeId })).First();
+            string username = userSession!.username;
+            long userId = userSession!.userId;
+            string membership;
+            var membership2 = await services.users.GetUserMembership(userId);
+            if (membership2  == null)
+            {
+                membership = "None";
+            }
+            else
+            {
+                membership = (int)membership2!.membershipType == 3 ? "OutrageousBuildersClub" : (int)membership2.membershipType == 2 ? "TurboBuildersClub" : (int)membership2.membershipType == 1 ? "BuildersClub" : "None";
+
+            }
             var userInfo = await services.users.GetUserById(userId);
             var accountAgeDays = DateTime.UtcNow.Subtract(userInfo.created).Days;
-            var statusIs18OrOver = await services.users.Is18Plus(userId);
-            var serverAddress = serverData.domain;
-            // Completely random. IP and Port don't serve a purpose anymore, other than to make the client code happy.
-            var ip = "1.1.1.1";
-            var port = 1111;
-#if DEBUG
-            serverAddress = "localhost:53640";
-#endif
+            string characterAppearanceUrl = $"{Configuration.BaseUrl}/Asset/CharacterFetch.ashx?placeId={placeId}&userId={userId}";
+            DateTime currentUtcDateTime = DateTime.UtcNow;
+            string formattedDateTime = currentUtcDateTime.ToString("M/d/yyyy h:mm:ss tt");
 
-            var placeId = serverData.placeId;
-            var uni = (await services.games.MultiGetPlaceDetails(new[] { placeId })).First();
-            var universeId = uni.universeId;
-            var userData = await services.users.GetUserById(userId);
-            var username = userData.username;
-            var membership = await services.users.GetUserMembership(userId);
-            var membershipType = membership?.membershipType ?? MembershipType.None;
+            string cticket = $"{userId}\n{jobId}\n{formattedDateTime}";
+            string ticketSignature = SignatureController.SignStringResponseForClientFromPrivateKey(cticket);
+            
+            string ticket2 = $"{userId}\n{username}\n{characterAppearanceUrl}\n{jobId}\n{formattedDateTime}";
+            string ticketSignature2 = SignatureController.SignStringResponseForClientFromPrivateKey(ticket2);
 
-            return new
+            string finalTicket = $"{formattedDateTime};{ticketSignature2};{ticketSignature}";
+            FeatureFlags.FeatureCheck(FeatureFlag.GamesEnabled, FeatureFlag.GameJoinEnabled);
+
+            dynamic joinScript = new
             {
                 ClientPort = 0,
-                MachineAddress = ip,
-                WebsocketAddress = serverAddress,
-                ServerPort = port,
+                MachineAddress = "75.162.0.5",
+                ServerPort = GameServerService.currentGameServerPorts[jobId],
                 PingUrl = "",
                 PingInterval = 120,
                 UserName = username,
                 SeleniumTestMode = false,
                 UserId = userId,
-                ClientTicket = ticket,
                 SuperSafeChat = false,
+                CharacterAppearance =
+                    characterAppearanceUrl,
+                ClientTicket = finalTicket,
+                GameId = jobId,
                 PlaceId = placeId,
                 MeasurementUrl = "",
                 WaitingForCharacterGuid = Guid.NewGuid().ToString(),
                 BaseUrl = Configuration.BaseUrl,
-                ChatStyle = "ClassicAndBubble", // "Classic", "Bubble", or "ClassicAndBubble"
+                ChatStyle = "ClassicAndBubble",
                 VendorId = 0,
                 ScreenShotInfo = "",
                 VideoInfo = "",
                 CreatorId = uni.builderId,
-                CreatorTypeEnum = uni.builderType,
-                MembershipType = membershipType,
+                CreatorTypeEnum = "User",
+                MembershipType = membership,
                 AccountAge = accountAgeDays,
                 CookieStoreFirstTimePlayKey = "rbx_evt_ftp",
                 CookieStoreFiveMinutePlayKey = "rbx_evt_fmp",
                 CookieStoreEnabled = true,
-                IsRobloxPlace = false, // todo?
-                UniverseId = universeId,
+                IsRobloxPlace = uni.builderId == 1,
                 GenerateTeleportJoin = false,
                 IsUnknownOrUnder13 = false,
-                Is18OrOver = statusIs18OrOver,
-                SessionId = Guid.NewGuid().ToString() + "|" + new Guid().ToString() + "|" + "0" + "|" + "127.0.0.1" + "|" + "8" + "|" + DateTime.UtcNow.ToString("O") + "|0|null|null",
+                SessionId = "",
                 DataCenterId = 0,
-                FollowUserId = 0,
+                UniverseId = 0,
                 BrowserTrackerId = 0,
                 UsePortraitMode = false,
-                CharacterAppearance = Configuration.BaseUrl + "/Asset/CharacterFetch.ashx?userId=" + userId,
+                FollowUserId = 0
             };
+            Console.WriteLine("hi");
+            return SignatureController.SignJsonResponseForClientFromPrivateKey(joinScript);
         }
 
         [HttpGetBypass("Asset/CharacterFetch.ashx")]
@@ -600,10 +629,34 @@ namespace Roblox.Website.Controllers
                 throw new BadRequestException();
             }
         }
+        
+        [HttpGet("marketplace/productinfo")]
+        public async Task<dynamic> GetProductInfo(long assetId)
+        {
+            var details = await services.assets.GetAssetCatalogInfo(assetId);
+            return new
+            {
+                TargetId = details.id,
+                AssetId = details.id,
+                ProductId = details.id,
+                Name = details.name,
+                Description = details.description,
+                AssetTypeId = (int)details.assetType,
+                IsForSale = details.isForSale,
+                IsPublicDomain = details.isForSale && details.price == 0,
+                Creator = new
+                {
+                    Id = details.creatorTargetId,
+                    Name = details.name,
+                },
+            };
+        }
 
-        [MVC.HttpPost("/gs/activity")]
+        [HttpPostBypass("/gs/activity")]
         public async Task<dynamic> GetGsActivity([Required, MVC.FromBody] ReportActivity request)
         {
+            Console.WriteLine(request.authorization);
+
             CheckServerAuth(request.authorization);
             var result = await services.gameServer.GetLastServerPing(request.serverId);
             return new
@@ -613,28 +666,28 @@ namespace Roblox.Website.Controllers
             };
         }
 
-        [MVC.HttpPost("/gs/ping")]
+        [HttpPostBypass("/gs/ping")]
         public async Task ReportServerActivity([Required, MVC.FromBody] ReportActivity request)
         {
             CheckServerAuth(request.authorization);
             await services.gameServer.SetServerPing(request.serverId);
         }
 
-        [MVC.HttpPost("/gs/delete")]
+        [HttpPostBypass("/gs/delete")]
         public async Task DeleteServer([Required, MVC.FromBody] ReportActivity request)
         {
             CheckServerAuth(request.authorization);
             await services.gameServer.DeleteGameServer(request.serverId);
         }
 
-        [MVC.HttpPost("/gs/shutdown")]
-        public async Task ShutDownServer([Required, MVC.FromBody] ReportActivity request)
+        [HttpPostBypass("/gs/shutdown")]
+        public void ShutDownServer([Required, MVC.FromBody] ReportActivity request)
         {
             CheckServerAuth(request.authorization);
-            await services.gameServer.ShutDownServer(request.serverId);
+            services.gameServer.ShutDownServer(request.serverId);
         }
 
-        [MVC.HttpPost("/gs/players/report")]
+        [HttpPostBypass("/gs/players/report")]
         public async Task ReportPlayerActivity([Required, MVC.FromBody] ReportPlayerActivity request)
         {
             CheckServerAuth(request.authorization);
@@ -653,14 +706,14 @@ namespace Roblox.Website.Controllers
             }
         }
 
-        [MVC.HttpPost("/gs/a")]
+        [HttpPostBypass("/gs/a")]
         public void ReportGS()
         {
             // Doesn't do anything yet. See: services/api/src/controllers/bypass.ts:1473
             return;
         }
 
-        [MVC.HttpPost("/Game/ValidateTicket.ashx")]
+        [HttpPostBypass("/Game/ValidateTicket.ashx")]
         public async Task<string> ValidateClientTicketRcc([Required, MVC.FromBody] ValidateTicketRequest request)
         {
 #if DEBUG
@@ -723,7 +776,7 @@ namespace Roblox.Website.Controllers
             }
         }
 
-        [MVC.HttpPost("/game/validate-machine")]
+        [HttpPostBypass("/game/validate-machine")]
         public dynamic ValidateMachine()
         {
             return new
@@ -799,7 +852,7 @@ namespace Roblox.Website.Controllers
             return new XDocument(robloxRoot).ToString();
         }
 
-        [MVC.HttpPost("api/moderation/filtertext/")]
+        [MVC.HttpPost("/moderation/filtertext/")]
         public dynamic GetModerationText()
         {
             var text = HttpContext.Request.Form["text"].ToString();
@@ -868,7 +921,7 @@ namespace Roblox.Website.Controllers
         {
             List<string> allowedList = new List<string>()
             {
-                "3af59a242d0b7d92ce86e6fbaa21430f"
+                "668f3fcdb04048c18528d2f7d2b891f2"
             };
 
             return new { data = allowedList };

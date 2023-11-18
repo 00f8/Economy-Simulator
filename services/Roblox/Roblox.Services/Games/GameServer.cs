@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Net.Http.Headers;
+using System.Text;
 using System.Text.Json;
 using Dapper;
 using Roblox.Dto.Games;
@@ -10,6 +11,7 @@ using Roblox.Metrics;
 using Roblox.Models.Assets;
 using Roblox.Models.Economy;
 using Roblox.Models.GameServer;
+using Roblox.Rendering;
 using Roblox.Services.App.FeatureFlags;
 using Roblox.Services.Exceptions;
 
@@ -22,8 +24,14 @@ public class GameServerService : ServiceBase
     private static HttpClient client { get; } = new();
     private static string jwtKey { get; set; } = string.Empty;
     private static EasyJwt jwt { get; } = new();
+    private static Random RandomComponent = new Random();
     private static PasswordHasher hasher { get; } = new();
-
+    private static Dictionary<long, long> gamePlayerCounts = new Dictionary<long, long>(); // placeid, playercount
+    private static Dictionary<string, Process> jobRccs = new Dictionary<string, Process>(); // jobid, rcc process
+    public static Dictionary<string, int> currentGameServerPorts = new Dictionary<string, int>() {}; // networkserver ports, jobid, port
+    private static Dictionary<long, string> currentPlaceIdsInUse = new Dictionary<long, string>(); // placeid, jobid
+    public static Dictionary<long, long> CurrentPlayersInGame = new Dictionary<long, long>() { }; // userid, placeid
+    public static Dictionary<Process, int> mainRCCPortsInUse = new Dictionary<Process, int>(); // Process, main RCC soap port
     public static void Configure(string newJwtKey)
     {
         jwtKey = newJwtKey;
@@ -118,6 +126,7 @@ public class GameServerService : ServiceBase
 
     public async Task OnPlayerJoin(long userId, long placeId, string serverId)
     {
+        CurrentPlayersInGame.Add(userId, placeId);
         await db.ExecuteAsync(
             "INSERT INTO asset_server_player (asset_id, user_id, server_id) VALUES (:asset_id, :user_id, :server_id::uuid)",
             new
@@ -176,12 +185,14 @@ public class GameServerService : ServiceBase
 
     public async Task OnPlayerLeave(long userId, long placeId, string serverId)
     {
+        CurrentPlayersInGame.Remove(userId);
         await db.ExecuteAsync(
             "DELETE FROM asset_server_player WHERE user_id = :user_id AND server_id = :server_id::uuid", new
             {
                 server_id = serverId,
                 user_id = userId,
             });
+        Console.WriteLine("deleted from db line 195 onplayerleave");
         var latestSession = await db.QuerySingleOrDefaultAsync<AssetPlayEntry>(
             "SELECT id, created_at as createdAt FROM asset_play_history WHERE user_id = :user_id AND asset_id = :asset_id AND ended_at IS NULL ORDER BY asset_play_history.id DESC LIMIT 1",
             new
@@ -281,18 +292,53 @@ public class GameServerService : ServiceBase
             new List<dynamic> {placeId, gameServerId, gameServerPort});
     }
 
-    public async Task ShutDownServer(string serverId)
+    public void ShutDownServer(string serverId)
     {
-        var data = await db.QuerySingleOrDefaultAsync("SELECT server_connection, asset_id FROM asset_server WHERE id = :id::uuid",
-            new {id = serverId});
-        if (data == null) throw new RecordNotFoundException();
-        var allPlayers = await GetGameServerPlayers(serverId);
-        foreach (var futureOrphan in allPlayers)
+        // TODO: When we add multiple servers for the same game (most likely not for a while), get the jobId or kill the server a better way.
+        string placeJobId = serverId; // hopefully not null, shouldn't be??
+        long placeId = GetPlaceIdByJobId(serverId);
+        Process rccProcess = jobRccs[placeJobId];
+        rccProcess.Kill(); // soft kill soon instead of force kill
+            
+        // Remove from our dictionaries now.
+        currentPlaceIdsInUse.Remove(placeId);
+        currentGameServerPorts.Remove(placeJobId);
+        jobRccs.Remove(placeJobId);
+        mainRCCPortsInUse.Remove(rccProcess);
+        RemoveAllPlayersFromPlaceId(placeId);
+        Console.WriteLine($"GameServer {placeJobId} (place {placeId}) was successfully closed!");
+    }
+    
+    public static void RemoveAllPlayersFromPlaceId(long placeId)
+    {
+        List<long> playersToRemove = CurrentPlayersInGame.Where(kvp => kvp.Value == placeId).Select(kvp => kvp.Key).ToList();
+    
+        foreach (var playerID in playersToRemove)
         {
-            await OnPlayerLeave(futureOrphan.userId, (long)data.asset_id, serverId);
+            CurrentPlayersInGame.Remove(playerID);
         }
-        var split = ((string) data.server_connection).Split(":");
-        await PostToGameServer<GameServerEmptyResponse>(split[0], split[1], "shutdown", new List<dynamic> { serverId });
+    }
+    
+    public static long GetUserPlaceId(long userId) // get user game is in
+    {
+        bool isInGame = CurrentPlayersInGame.ContainsKey(userId);
+        if (!isInGame)
+            return 0;
+
+        return CurrentPlayersInGame[userId];
+    }
+    
+    public static long GetPlaceIdByJobId(string jobId)
+    {
+        foreach (var kvp in currentPlaceIdsInUse)
+        {
+            if (kvp.Value == jobId)
+            {
+                return kvp.Key;
+            }
+        }
+            
+        return 0; // we never throw exceptions. EVER.
     }
 
     public async Task<DateTime> GetLastServerPing(string serverId)
@@ -315,9 +361,7 @@ public class GameServerService : ServiceBase
 
     public async Task DeleteGameServer(string serverId)
     {
-        // then we can delete it...
-        await db.ExecuteAsync("DELETE FROM asset_server_player WHERE server_id = :id::uuid", new {id = serverId});
-        await db.ExecuteAsync("DELETE FROM asset_server WHERE id = :id::uuid", new {id = serverId});
+        
     }
     
     private static readonly IEnumerable<int> GameServerPorts = new []
@@ -382,7 +426,7 @@ public class GameServerService : ServiceBase
 
         throw new ArgumentOutOfRangeException();
     }
-
+    
     public async Task<List<Tuple<GameServerInfoResponse,GameServerConfigEntry>>> GetAllGameServers()
     {
         var getServerDataTasks = new List<Task<GameServerInfoResponse?>>();
@@ -403,7 +447,7 @@ public class GameServerService : ServiceBase
         return serverData!;
     }
 
-    private async Task<GameServerGetOrCreateResponse> GetServerForPlaceV2(long placeId)
+    /*private async Task<GameServerGetOrCreateResponse> GetServerForPlaceV2(long placeId)
     {
         await using var serverCreationLock = await Cache.redLock.CreateLockAsync("CreateGameServerV1", TimeSpan.FromSeconds(30));
         if (!serverCreationLock.IsAcquired)
@@ -529,102 +573,116 @@ public class GameServerService : ServiceBase
             status = JoinStatus.Waiting,
         };
     }
-    
+    */
+
     public async Task<GameServerGetOrCreateResponse> GetServerForPlace(long placeId)
     {
-        if (FeatureFlags.IsEnabled(FeatureFlag.UseGameJoinV2))
-        {
-            return await GetServerForPlaceV2(placeId);
-        }
+        string jobId = Guid.NewGuid().ToString();
+
+        int mainRCCPort = RandomComponent.Next(30000, 40000);
+        int networkServerPort = RandomComponent.Next(50000, 60000);
+        string StartGameInfo;
         
-        if (false)
+        if (currentPlaceIdsInUse.ContainsKey(placeId)!)
         {
-            var job = CreateGameServerTicket(placeId, "127.0.0.1:53640");
-            return new()
-            {
-                status = JoinStatus.Joining,
-                job = job,
-            };
+            jobId = currentPlaceIdsInUse[placeId];
+            StartGameInfo = "OK";
+        }
+        else
+        {
+            StartGameInfo = await StartGameServer(placeId, mainRCCPort, networkServerPort, jobId, 43200);
         }
 
-        foreach (var entry in Configuration.GameServerIpAddresses)
+        return StartGameInfo != "BAD"
+            ? new GameServerGetOrCreateResponse()
+            {
+                job = jobId,
+                status = JoinStatus.Joining
+            }
+            : new GameServerGetOrCreateResponse()
+            {
+                status = JoinStatus.Waiting
+            };
+    }
+    
+    public async Task<string> StartGameServer(long placeId, int RCCPort, int networkServerPort, string jobId, int JobExpiration)
+    {
+        // Before we waste our time, check if the place exists.
+        AssetsService assetsService = new AssetsService();
+        GamesService gamesService = new GamesService();
+        var AssetCatalogInfo = await assetsService.GetAssetCatalogInfo(placeId);
+        var uni = (await gamesService.MultiGetPlaceDetails(new[] { placeId })).First();
+        if (AssetCatalogInfo.assetType != Models.Assets.Type.Place)
         {
-            var data = entry.ip.Split(":");
-            var ip = data[0];
-            var port = data[1];
+            return "BAD";
+        }
+        Process rccServer = new Process();
+        rccServer.StartInfo.CreateNoWindow = false;
+        rccServer.StartInfo.WindowStyle = ProcessWindowStyle.Minimized;
+        rccServer.StartInfo.FileName = $"{RenderingHandler.RccServicePath}RCCService.exe";
+        rccServer.StartInfo.Arguments = string.Format($@"-console -port {RCCPort}");
+        rccServer.StartInfo.RedirectStandardError = false;
+        rccServer.StartInfo.RedirectStandardOutput = false;
+        rccServer.StartInfo.UseShellExecute = true;
+        rccServer.Start();
+        string originalScript = File.ReadAllText($"{RenderingHandler.LuaScriptPath}GameServerFloatzel.lua");
+        string finalScript = originalScript.Replace
+            ("%port%", $"{networkServerPort}").Replace
+            ("%placeId%", $"{placeId}").Replace
+            ("%creatorId%", $"{uni.builderId}").Replace
+            ("_AUTHORIZATION_STRING_", Configuration.GameServerAuthorization);
+        string XML = $@"<?xml version=""1.0"" encoding=""utf-8""?>
+            <soap:Envelope xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance""
+               xmlns:xsd=""http://www.w3.org/2001/XMLSchema""
+               xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"">
+                <soap:Body>
+                    <OpenJobEx xmlns=""http://economysimulator.com/"">
+                        <job>
+                            <id>{jobId}</id>
+                            <category>1</category>
+                            <cores>1</cores>
+                            <expirationInSeconds>{JobExpiration}</expirationInSeconds>
+                        </job>
+                        <script>
+                            <name>{Guid.NewGuid().ToString()}</name>
+                            <script>
+                                <![CDATA[
+                                {finalScript}
+                                ]]>
+                            </script>
+                        </script>
+                    </OpenJobEx>
+                </soap:Body>
+            </soap:Envelope>";
+        await SendSoapRequestToRcc($"http://127.0.0.1:{RCCPort}", XML, "OpenJobEx");
+        currentPlaceIdsInUse.Add(placeId, jobId);
+        currentGameServerPorts.Add(jobId, networkServerPort);
+        jobRccs.Add(jobId, rccServer);
+        return "OK";
+    }
+    
+    public static async Task SendSoapRequestToRcc(string URL, string XML, string SOAPAction)
+    {
+        using (HttpClient RccHttpClient = new HttpClient())
+        {
+            RccHttpClient.DefaultRequestHeaders.Add("SOAPAction", $"http://economysimulator.com/{SOAPAction}");
+            HttpContent XMLContent = new StringContent(XML, Encoding.UTF8, "text/xml");
             try
             {
-                var watch = new Stopwatch();
-                watch.Start();
-                var serverInfo = await GetGameServerInfo(ip, port);
-                watch.Stop();
-                GameMetrics.ReportTimeToGetGameServerInfo(ip, port, watch.ElapsedMilliseconds);
-                
-                var runningGames = serverInfo.data.ToList();
-                var runningPlace = runningGames.Find(v => v.placeId == placeId && !v.isFull);
-                if (runningPlace != null)
+                HttpResponseMessage RccHttpClientPost = await RccHttpClient.PostAsync(URL, XMLContent);
+                string RccHttpClientResponse = await RccHttpClientPost.Content.ReadAsStringAsync();
+                if (!RccHttpClientPost.IsSuccessStatusCode)
                 {
-                    var joinUrl = GetPortByPortNumber(runningPlace.port).ApplyIdToUrl(entry.domain);
-                    Console.WriteLine("Found a good place! placeId = {0} port = {1} url = {2}", placeId, runningPlace.port, joinUrl);
-                    return new()
-                    {
-                        status = JoinStatus.Joining,
-                        job = CreateGameServerTicket(placeId, joinUrl),
-                    };
+                    return;
                 }
-
-                if (serverInfo.data.Count() <= entry.maxServerCount)
-                {
-                    // Create the server
-                    var id = Guid.NewGuid().ToString();
-                    var gamePort = GetPreferredPortForGameServer(runningGames);
-                    await db.ExecuteAsync(
-                        "INSERT INTO asset_server (id, asset_id, ip, port, server_connection) VALUES (:id::uuid, :asset_id, :ip, :port, :server_connection)",
-                        new
-                        {
-                            id,
-                            asset_id = placeId,
-                            ip,
-                            gamePort.port,
-                            server_connection = entry.ip, // ip:port
-                        });
-                    try
-                    {
-                        watch.Restart();
-                        await StartGame(ip, port, placeId, id, gamePort.port);
-                        watch.Stop();
-                        GameMetrics.ReportTimeToStartGameServer(ip, port, watch.ElapsedMilliseconds);
-                    }
-                    catch (Exception e)
-                    {
-                        await db.ExecuteAsync("DELETE FROM asset_server WHERE id = :id::uuid", new {id});
-                        throw new Exception("Cannot start game server", e);
-                    }
-
-                    Console.WriteLine("Created server for {0} at {1}:{2}. Join url = {3}", placeId, entry.domain, gamePort.port, gamePort.ApplyIdToUrl(entry.domain));
-
-                    return new()
-                    {
-                        status = JoinStatus.Joining,
-                        job = CreateGameServerTicket(placeId, gamePort.ApplyIdToUrl(entry.domain)),
-                    };
-
-                }
-                // anything else means we should ignore server as if it doesn't exist!
             }
             catch (Exception e)
             {
-                Console.WriteLine("Could not connect to gameServer {0}:{1}: {2}",ip,port,e);
+                Console.WriteLine($"[RCCSendRequest] Failed to send request to RCC: {e}");
             }
-            
         }
-
-        return new()
-        {
-            status = JoinStatus.Waiting,
-        };
     }
-
+    
     public async Task DeleteOldGameServers()
     {
         // first part, do game servers
@@ -645,6 +703,7 @@ public class GameServerService : ServiceBase
             {
                 id = server.id,
             });
+            //Console.WriteLine("deleted from db line 706 deleteoldgameservers");
             await db.ExecuteAsync("DELETE FROM asset_server WHERE id = :id::uuid", new
             {
                 id = server.id,
@@ -652,7 +711,7 @@ public class GameServerService : ServiceBase
         }
         // second part, do game server players
         // this is so ugly jeez
-        var orphanedPlayers =
+        /*var orphanedPlayers =
             await db.QueryAsync(
                 "SELECT s.id, p.server_id FROM asset_server_player p LEFT JOIN asset_server s ON s.id = p.server_id WHERE s.id IS NULL");
         foreach (var deadbeatDad in orphanedPlayers.Select(c => ((Guid) c.server_id).ToString()).Distinct())
@@ -662,7 +721,10 @@ public class GameServerService : ServiceBase
             {
                 id = deadbeatDad,
             });
+            Console.WriteLine("deleted from db line 724 DeleteOldGameServers");
+
         }
+        */
     }
 
     public async Task<IEnumerable<GameServerPlayer>> GetGameServerPlayers(string serverId)

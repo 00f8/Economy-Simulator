@@ -191,7 +191,7 @@ public class AdminApiController : ControllerBase
             throw new StaffException("InternalServerError");
         }
 
-        if (safeUserSession.userId != 12)
+        if (!StaffFilter.IsOwner(userSession.userId))
             throw new Exception("InternalServerError");
 
         await services.users.AddStaffPermission(userId, permission);
@@ -1917,6 +1917,7 @@ Thank you for your understanding,
     [HttpPost("asset/copy-from-roblox"), StaffFilter(Access.CreateAssetCopiedFromRoblox)]
     public async Task<dynamic> CopyAssetFromRoblox([Required, FromBody] CopyAssetRequest request)
     {
+        var permissions = (await services.users.GetStaffPermissions(safeUserSession.userId)).Select(c => c.permission).ToArray();
         if (!request.force)
         {
             // Check duplicate id first
@@ -1959,7 +1960,7 @@ Thank you for your understanding,
         
         if (details.IsLimited == true || details.IsLimitedUnique == true)
         {
-            if (!StaffFilter.IsOwner(safeUserSession.userId))
+            if (!permissions.Contains(Access.MakeItemLimited))
                 throw new StaffException("You do not have permission to copy a limited item");
         }
         
@@ -2812,17 +2813,9 @@ Thank you for your understanding,
     [StaffFilter(Access.GetGameServers)]
     public async Task<dynamic> GetGameServers()
     {
-        var result = await services.gameServer.GetAllGameServers();
+        var result = services.gameServer.GetAllGameServers();
         var l = new List<dynamic>();
-        foreach (var item in result)
-        {
-            l.Add(new
-            {
-                server = item.Item2,
-                games = item.Item1,
-            });
-        }
-
+        return result;
         return l;
     }
 }

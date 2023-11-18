@@ -7,9 +7,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="334b8d1c-3b9d-4bc2-8d1f-4f41f44071c9" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/Roblox.Website/appsettings.json" beforeDir="false" afterPath="$PROJECT_DIR$/Roblox.Website/appsettings.json" afterDir="false" />
-    </list>
+    <list default="true" id="334b8d1c-3b9d-4bc2-8d1f-4f41f44071c9" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -17,6 +15,10 @@
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../.." />
+  </component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/80bbeda04f1e9776c81db5e7a71ee537ff88e08969ee21735ced3b63c5ec462/Tuple.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/de4abfa2737dd9deeffb875253ff5dc7bc75a9a2a82e4f07eeef044a5f242/SqlBuilder.cs" root0="SKIP_HIGHLIGHTING" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 4
@@ -36,6 +38,7 @@
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
     &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;org.jetbrains.plugins.gitlab.GitLabSettingsConfigurable&quot;,
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   },
   &quot;keyToStringList&quot;: {
@@ -79,6 +82,18 @@
       <workItem from="1699843957354" duration="1195000" />
       <workItem from="1699915550067" duration="3427000" />
       <workItem from="1699919532479" duration="2150000" />
+      <workItem from="1699927037201" duration="3328000" />
+      <workItem from="1699933210252" duration="749000" />
+      <workItem from="1700005117059" duration="4279000" />
+      <workItem from="1700009640232" duration="606000" />
+      <workItem from="1700080086871" duration="212000" />
+      <workItem from="1700091812805" duration="1428000" />
+      <workItem from="1700093343514" duration="1131000" />
+      <workItem from="1700098563279" duration="525000" />
+      <workItem from="1700100384486" duration="443000" />
+      <workItem from="1700103512293" duration="1452000" />
+      <workItem from="1700177688069" duration="726000" />
+      <workItem from="1700183378297" duration="6005000" />
     </task>
     <servers />
   </component>

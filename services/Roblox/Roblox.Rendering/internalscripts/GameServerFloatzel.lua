@@ -4,7 +4,7 @@ local http = game:GetService("HttpService");
 http.HttpEnabled = false;
 
 -- begin dynamiclly edited
-local url = "http://economysimulator.com/";
+local url = "http://economysimulator.com";
 local port = %port%;
 local placeId = %placeId%;
 local creatorType = Enum.CreatorType.User;
@@ -131,7 +131,7 @@ if url~=nil then
 	pcall(function() game:GetService("Players"):SetAbuseReportUrl(url .. "/AbuseReport/InGameChatHandler.ashx") end)
 	pcall(function() game:GetService("ScriptInformationProvider"):SetAssetUrl(url .. "/Asset/") end)
 	pcall(function() game:GetService("ContentProvider"):SetBaseUrl(url .. "/") end)
-	pcall(function() game:GetService("Players"):SetChatFilterUrl(url .. "/Game/ChatFilter.ashx") end)
+	--pcall(function() game:GetService("Players"):SetChatFilterUrl(url .. "/Game/ChatFilter.ashx") end)
 
 	game:GetService("BadgeService"):SetPlaceId(placeId)
 
