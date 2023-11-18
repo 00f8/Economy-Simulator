@@ -629,6 +629,28 @@ namespace Roblox.Website.Controllers
                 throw new BadRequestException();
             }
         }
+        
+        [HttpGet("marketplace/productinfo")]
+        public async Task<dynamic> GetProductInfo(long assetId)
+        {
+            var details = await services.assets.GetAssetCatalogInfo(assetId);
+            return new
+            {
+                TargetId = details.id,
+                AssetId = details.id,
+                ProductId = details.id,
+                Name = details.name,
+                Description = details.description,
+                AssetTypeId = (int)details.assetType,
+                IsForSale = details.isForSale,
+                IsPublicDomain = details.isForSale && details.price == 0,
+                Creator = new
+                {
+                    Id = details.creatorTargetId,
+                    Name = details.name,
+                },
+            };
+        }
 
         [HttpPostBypass("/gs/activity")]
         public async Task<dynamic> GetGsActivity([Required, MVC.FromBody] ReportActivity request)

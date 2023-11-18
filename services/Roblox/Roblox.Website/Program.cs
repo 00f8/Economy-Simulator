@@ -150,7 +150,7 @@ app.UseRobloxLoggingMiddleware();
 
 app.UseExceptionHandler("/error");
 //await CommandHandler.Configure("ws://localhost:3189", "hello world of deving 1234");
-CommandHandler.Configure(configuration.GetSection("Render:BaseUrl").Value, configuration.GetSection("Render:Authorization").Value); // will be removed soon
+//CommandHandler.Configure(configuration.GetSection("Render:BaseUrl").Value, configuration.GetSection("Render:Authorization").Value); // will be removed soon
 SignatureController.Setup();
 RenderingHandler.Configure(configuration.GetSection("BaseUrl").Value, configuration.GetSection("Directories:RCCService").Value, configuration.GetSection("Directories:RCCLuaScripts").Value);
 SessionMiddleware.Configure(configuration.GetSection("Jwt:Sessions").Value);
