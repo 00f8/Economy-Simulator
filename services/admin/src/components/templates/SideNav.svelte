@@ -149,7 +149,7 @@
 				{/each}
 				{#if rank.hasPermission("CreateAsset") || rank.hasPermission("SetAssetProduct") || rank.hasPermission("MigrateAssetFromRoblox") || rank.hasPermission("CreateAssetVersion") || rank.hasPermission("RequestAssetReRender") || rank.hasPermission('CreateBundleCopiedFromRoblox') || rank.hasPermission('CreateAssetCopiedFromRoblox')}
 					<h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-2 mb-1 text-muted">
-						<span>Catalog</span>
+						<span style="color: white;">Catalog</span>
 					</h6>
 				{/if}
 				{#if rank.hasPermission("CreateAsset")}
