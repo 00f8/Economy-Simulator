@@ -923,6 +923,8 @@ namespace Roblox.Website.Controllers
         [HttpGetBypass("GetAllowedMD5Hashes")]
         public MVC.ActionResult<dynamic> AllowedMD5Hashes()
         {
+            if (!IsRcc())
+                throw new RobloxException(400, 0, "BadRequest");
             List<string> allowedList = new List<string>()
             {
                 "88f9751261ecb4d992ef7bc212e66726"
@@ -935,9 +937,11 @@ namespace Roblox.Website.Controllers
         [HttpGetBypass("GetAllowedSecurityKeys")]
         public MVC.ActionResult<dynamic> AllowedSecurityVersions()
         {
+            if (!IsRcc())
+                throw new RobloxException(400, 0, "BadRequest");
             List<string> allowedList = new List<string>()
             {
-                "0.1.0ecspcplayer"
+                "0.2.0ecspcplayer"
             };
 
             return new { data = allowedList };
