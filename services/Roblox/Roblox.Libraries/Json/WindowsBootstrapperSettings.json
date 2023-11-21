@@ -11,7 +11,7 @@
   "DeprecatePropertyTree": "True",
   "DeprecatedOSXMinorVersion": "6",
   "EnabledWebRedirect": "True",
-  "ExeVersion": "0.0.0.1",
+  "ExeVersion": "0.1.0.2",
   "FFlagBetterErrorReporting": "True",
   "FFlagChromefixOnlyIfFound": "True",
   "FFlagChromefixOpenDefaultPreferences": "True",
